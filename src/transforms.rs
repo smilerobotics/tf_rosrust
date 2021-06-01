@@ -1,9 +1,18 @@
 use nalgebra::geometry::{UnitQuaternion, Isometry3, Translation3};
 pub use nalgebra;
-use rosrust_msg::geometry_msgs::{Transform, Pose, Vector3, Quaternion,
-    TransformStamped};
-use rosrust_msg::std_msgs::Header;
 
+rosrust::rosmsg_include!(
+    geometry_msgs / Transform,
+    geometry_msgs / Pose,
+    geometry_msgs / Vector3,
+    geometry_msgs / Quaternion,
+    geometry_msgs / TransformStamped,
+    std_msgs / Header,
+    tf2_msgs / TFMessage
+);
+
+use geometry_msgs::{Pose, Quaternion, Transform, TransformStamped, Vector3};
+use std_msgs::Header;
 
 pub fn isometry_from_pose(pose: &Pose) -> Isometry3<f64>{
     let trans = Translation3::new(pose.position.x, pose.position.y,
@@ -129,7 +138,7 @@ mod test {
             translation: Vector3{x: 2f64, y: 2f64, z: 0f64},
             rotation: Quaternion{x: 0f64, y: 0f64, z: 0f64, w: 1f64}
         };
-        let transform_chain = vec!(tf1, tf1);
+        let transform_chain = vec!(tf1.clone(), tf1);
         let res = chain_transforms(&transform_chain);
         assert_eq!(res, expected_tf);
     }

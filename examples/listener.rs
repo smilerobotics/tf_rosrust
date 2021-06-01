@@ -1,5 +1,4 @@
 extern crate rosrust;
-extern crate rosrust_msg;
 extern crate rustros_tf;
 
 use rustros_tf::TfListener;

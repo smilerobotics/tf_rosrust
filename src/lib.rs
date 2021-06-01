@@ -20,11 +20,10 @@ use std::collections::VecDeque;
 use std::collections::HashSet;
 use std::cmp::Ordering;
 use std::sync::{Arc, RwLock};
-use rosrust_msg::geometry_msgs::{Transform, TransformStamped};
-use rosrust_msg::std_msgs::Header;
-use rosrust_msg::tf2_msgs::TFMessage;
 
 pub mod transforms;
+pub use transforms::geometry_msgs::TransformStamped;
+use transforms::{geometry_msgs::Transform, std_msgs::Header, tf2_msgs::TFMessage};
 
 #[derive(Clone, Debug)]
 struct OrderedTF{
@@ -328,7 +327,10 @@ impl TfBuffer {
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    use super::{
+        transforms::geometry_msgs::{Quaternion, Vector3},
+        *,
+    };
     /// This function builds a tree consisting of the following items:
     /// * a world coordinate frame
     /// * an item in the world frame at (1,0,0)
@@ -393,7 +395,7 @@ mod test {
            }
         };
         buffer.add_transform(&base_link_to_camera, true);
-        buffer.add_transform(&get_inverse(&base_link_to_camera), true);
+        buffer.add_transform(&transforms::get_inverse(&base_link_to_camera), true);
     }
 
 
@@ -460,7 +462,7 @@ mod test {
             header: Header {
                 frame_id: "camera".to_string(),
                 stamp: rosrust::Time{sec:0, nsec:700_000_000},
-                seq: 0
+                seq: 1
             },
             transform: Transform{
                 rotation: Quaternion{
