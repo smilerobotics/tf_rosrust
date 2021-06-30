@@ -1,5 +1,5 @@
-# rustros_tf
-[![Build Status](https://travis-ci.com/arjo129/rustros_tf.svg?branch=master)](https://travis-ci.com/arjo129/rustros_tf) | [API Documentation](https://arjo129.github.io/rustros_tf/rustros_tf/index.html) | [crates.io](https://crates.io/crates/rustros_tf)
+# tf_rosrust
+![Build and Test](https://github.com/smilerobotics/tf_rosrust/workflows/Build%20and%20Test/badge.svg) [![crates.io](https://img.shields.io/crates/v/tf_rosrust.svg)](https://crates.io/crates/tf_rosrust) [![docs](https://docs.rs/tf_rosrust/badge.svg)](https://docs.rs/tf_rosrust)
 
 This is a rust port of the [ROS tf library](http://wiki.ros.org/tf). It is intended for being used in robots to help keep track of multiple coordinate frames and is part of a larger suite of rust libraries that provide support for various robotics related functionality.
 
@@ -34,7 +34,7 @@ sudo apt install gfortran
 After installing ROS, you may simply add this crate as a dependency to your cargo project:
 ```
 [dependencies]
-rustros_tf = "0.1.0"
+tf_rosrust = "0.0.1"
 ```
 
 # Example usage
@@ -42,9 +42,9 @@ The following example shows a simple lookup.
 ```
 extern crate rosrust;
 extern crate rosrust_msg;
-extern crate rustros_tf;
+extern crate tf_rosrust;
 
-use rustros_tf::TfListener;
+use tf_rosrust::TfListener;
 
 fn main() {
     rosrust::init("listener");

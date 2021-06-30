@@ -1,7 +1,7 @@
 extern crate rosrust;
-extern crate rustros_tf;
+extern crate tf_rosrust;
 
-use rustros_tf::TfListener;
+use tf_rosrust::TfListener;
 
 fn main() {
     rosrust::init("listener");
