@@ -1,16 +1,21 @@
 # tf_rosrust
 ![Build and Test](https://github.com/smilerobotics/tf_rosrust/workflows/Build%20and%20Test/badge.svg) [![crates.io](https://img.shields.io/crates/v/tf_rosrust.svg)](https://crates.io/crates/tf_rosrust) [![docs](https://docs.rs/tf_rosrust/badge.svg)](https://docs.rs/tf_rosrust)
 
+This project is forked from [arjo129 rustros_tf](https://github.com/arjo129/rustros_tf),[MaxiMaerz rustros_tf](https://github.com/MaxiMaerz/rustros_tf).
+
+- changes from original code
+    - fix transformations by MaxiMaerz
+    - contains ros msg files to run without ros installation
+    - fix dynamic tf handling
+
 This is a rust port of the [ROS tf library](http://wiki.ros.org/tf). It is intended for being used in robots to help keep track of multiple coordinate frames and is part of a larger suite of rust libraries that provide support for various robotics related functionality.
+
 
 ## Features
 So far the only the following have been implemented:
 * `TfListener` with `lookup_transform` and time traversal. 
 
 I am still working on the following:
-* Integration with point clouds. 
-* Integration with image geometry.
-* Removal of `ndarray` as a dependency.
 * Adding `nalgebra` related conversion methods. 
 * More efficient cache data structure.
 * A `TfBroadcaster` struct.
@@ -27,15 +32,19 @@ curl -sSL 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0xC1CF6E31E6BADE
 sudo apt update
 sudo apt install ros-melodic-desktop
 ```
-You will also need a fortran compiler.
-```
-sudo apt install gfortran
-```
 After installing ROS, you may simply add this crate as a dependency to your cargo project:
 ```
 [dependencies]
 tf_rosrust = "0.0.1"
 ```
+
+## Third party software
+
+This product includes copies and modifications of software developed by third parties:
+
+- [`ros_msgs`](ros_msgs) includes copies and modifications of msg packages by [ros](https://github.com/ros) and [tf2_msgs](https://github.com/ros/geometry2), licensed under the 2-Clause BSD License.
+
+See the license files included in these directories for more details.
 
 # Example usage
 The following example shows a simple lookup. 
