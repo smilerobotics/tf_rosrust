@@ -37,38 +37,20 @@ impl TfBuffer {
 
     fn add_transform(&mut self, transform: &TransformStamped, static_tf: bool) {
         //TODO: Detect is new transform will create a loop
-        if self
-            .child_transform_index
-            .contains_key(&transform.header.frame_id)
-        {
-            let res = self
-                .child_transform_index
-                .get_mut(&transform.header.frame_id.clone())
-                .unwrap();
-            res.insert(transform.child_frame_id.clone());
-        } else {
-            self.child_transform_index
-                .insert(transform.header.frame_id.clone(), HashSet::new());
-            let res = self
-                .child_transform_index
-                .get_mut(&transform.header.frame_id.clone())
-                .unwrap();
-            res.insert(transform.child_frame_id.clone());
-        }
+        self.child_transform_index
+            .entry(transform.header.frame_id.clone())
+            .or_default()
+            .insert(transform.child_frame_id.clone());
 
         let key = TfGraphNode {
             child: transform.child_frame_id.clone(),
             parent: transform.header.frame_id.clone(),
         };
 
-        if self.transform_data.contains_key(&key) {
-            let data = self.transform_data.get_mut(&key).unwrap();
-            data.add_to_buffer(transform.clone());
-        } else {
-            let mut data = TfIndividualTransformChain::new(static_tf);
-            data.add_to_buffer(transform.clone());
-            self.transform_data.insert(key, data);
-        }
+        self.transform_data
+            .entry(key)
+            .or_insert_with(|| TfIndividualTransformChain::new(static_tf))
+            .add_to_buffer(transform.clone());
     }
 
     /// Retrieves the transform path
