@@ -85,19 +85,15 @@ impl TfBuffer {
             if current_node == to {
                 break;
             }
-            let children = self.child_transform_index.get(&current_node);
-            match children {
-                Some(children) => {
-                    for v in children {
-                        if visited.contains(&v.to_string()) {
-                            continue;
-                        }
-                        parents.insert(v.to_string(), current_node.clone());
-                        frontier.push_front(v.to_string());
-                        visited.insert(v.to_string());
+            if let Some(children) = self.child_transform_index.get(&current_node) {
+                for v in children {
+                    if visited.contains(&v.to_string()) {
+                        continue;
                     }
+                    parents.insert(v.to_string(), current_node.clone());
+                    frontier.push_front(v.to_string());
+                    visited.insert(v.to_string());
                 }
-                None => {}
             }
         }
         let mut r = to;
@@ -146,18 +142,18 @@ impl TfBuffer {
                 }
                 let final_tf = chain_transforms(&tflist);
                 let msg = TransformStamped {
-                    child_frame_id: to.clone(),
+                    child_frame_id: to,
                     header: Header {
-                        frame_id: from.clone(),
+                        frame_id: from,
                         stamp: time,
                         seq: 1,
                     },
                     transform: final_tf,
                 };
-                return Ok(msg);
+                Ok(msg)
             }
-            Err(x) => return Err(x),
-        };
+            Err(x) => Err(x),
+        }
     }
 
     pub(crate) fn lookup_transform_with_time_travel(
@@ -170,16 +166,14 @@ impl TfBuffer {
     ) -> Result<TransformStamped, TfError> {
         let tf1 = self.lookup_transform(from, fixed_frame, time1);
         let tf2 = self.lookup_transform(to, fixed_frame, time2);
-        match tf1 {
-            Err(x) => return Err(x),
-            Ok(_) => {}
+        if let Err(x) = tf1 {
+            return Err(x);
         }
-        match tf2 {
-            Err(x) => return Err(x),
-            Ok(_) => {}
+        if let Err(x) = tf2 {
+            return Err(x);
         }
         let transforms = get_inverse(&tf1.unwrap());
-        let result = chain_transforms(&vec![tf2.unwrap().transform, transforms.transform]);
+        let result = chain_transforms(&[tf2.unwrap().transform, transforms.transform]);
         Ok(to_transform_stamped(
             result,
             from.to_string(),

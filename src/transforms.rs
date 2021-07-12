@@ -69,11 +69,11 @@ pub fn get_inverse(trans: &TransformStamped) -> TransformStamped {
 }
 
 ///Chain multiple transforms together. Takes in a vector of transforms. The vector should be in order of desired transformations
-pub fn chain_transforms(transforms: &Vec<Transform>) -> Transform {
+pub fn chain_transforms(transforms: &[Transform]) -> Transform {
     let mut final_transform = Isometry3::identity();
     for t in transforms {
         let tf = isometry_from_transform(&t);
-        final_transform = final_transform * tf;
+        final_transform *= tf;
     }
     isometry_to_transform(final_transform)
 }
@@ -116,7 +116,7 @@ pub fn interpolate(t1: Transform, t2: Transform, weight: f64) -> Transform {
                         y: t1.translation.y * weight + t2.translation.y * (1.0 - weight),
                         z: t1.translation.z * weight + t2.translation.z * (1.0 - weight),
                     },
-                    rotation: t1.rotation.clone(),
+                    rotation: t1.rotation,
                 }
             } else {
                 Transform {
@@ -125,7 +125,7 @@ pub fn interpolate(t1: Transform, t2: Transform, weight: f64) -> Transform {
                         y: t1.translation.y * weight + t2.translation.y * (1.0 - weight),
                         z: t1.translation.z * weight + t2.translation.z * (1.0 - weight),
                     },
-                    rotation: t2.rotation.clone(),
+                    rotation: t2.rotation,
                 }
             }
         }

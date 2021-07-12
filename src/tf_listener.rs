@@ -27,8 +27,8 @@ use crate::{
 /// it must be scoped to exist through the lifetime of the program. One way to do this is using an `Arc` or `RwLock`.
 pub struct TfListener {
     buffer: Arc<RwLock<TfBuffer>>,
-    static_subscriber: rosrust::Subscriber,
-    dynamic_subscriber: rosrust::Subscriber,
+    _static_subscriber: rosrust::Subscriber,
+    _dynamic_subscriber: rosrust::Subscriber,
 }
 
 impl TfListener {
@@ -37,21 +37,21 @@ impl TfListener {
         let buff = RwLock::new(TfBuffer::new());
         let arc = Arc::new(buff);
         let r1 = arc.clone();
-        let _subscriber_tf = rosrust::subscribe("tf", 100, move |v: TFMessage| {
+        let _dynamic_subscriber = rosrust::subscribe("tf", 100, move |v: TFMessage| {
             r1.write().unwrap().handle_incoming_transforms(v, false);
         })
         .unwrap();
 
         let r2 = arc.clone();
-        let _subscriber_tf_static = rosrust::subscribe("tf_static", 100, move |v: TFMessage| {
+        let _static_subscriber = rosrust::subscribe("tf_static", 100, move |v: TFMessage| {
             r2.write().unwrap().handle_incoming_transforms(v, true);
         })
         .unwrap();
 
         TfListener {
-            buffer: arc.clone(),
-            static_subscriber: _subscriber_tf_static,
-            dynamic_subscriber: _subscriber_tf,
+            buffer: arc,
+            _static_subscriber,
+            _dynamic_subscriber,
         }
     }
 
@@ -78,5 +78,11 @@ impl TfListener {
             .read()
             .unwrap()
             .lookup_transform_with_time_travel(from, time1, to, time2, fixed_frame)
+    }
+}
+
+impl Default for TfListener {
+    fn default() -> Self {
+        TfListener::new()
     }
 }

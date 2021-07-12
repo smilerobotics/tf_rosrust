@@ -18,11 +18,11 @@ pub(crate) struct TfIndividualTransformChain {
 
 impl TfIndividualTransformChain {
     pub fn new(static_tf: bool) -> Self {
-        return TfIndividualTransformChain {
+        Self {
             buffer_size: 100,
             transform_chain: Vec::new(),
-            static_tf: static_tf,
-        };
+            static_tf,
+        }
     }
 
     pub fn add_to_buffer(&mut self, msg: TransformStamped) {
@@ -42,12 +42,7 @@ impl TfIndividualTransformChain {
 
     pub fn get_closest_transform(&self, time: rosrust::Time) -> Result<TransformStamped, TfError> {
         if self.static_tf {
-            return Ok(self
-                .transform_chain
-                .get(self.transform_chain.len() - 1)
-                .unwrap()
-                .tf
-                .clone());
+            return Ok(self.transform_chain.last().unwrap().tf.clone());
         }
 
         let mut res = TransformStamped::default();
