@@ -78,14 +78,20 @@ impl TfBuffer {
                 }
             }
         }
-        let mut r = to;
+        let mut r = to.clone();
         while r != from {
             res.push(r.clone());
             let parent = parents.get(&r);
 
             match parent {
                 Some(x) => r = x.to_string(),
-                None => return Err(TfError::CouldNotFindTransform),
+                None => {
+                    return Err(TfError::CouldNotFindTransform(
+                        from,
+                        to,
+                        self.child_transform_index.clone(),
+                    ))
+                }
             }
         }
         res.reverse();

@@ -1,12 +1,23 @@
+use std::collections::{HashMap, HashSet};
+
+use rosrust::Time;
+use thiserror::Error;
+
+use crate::transforms::geometry_msgs::TransformStamped;
+
 /// Enumerates the different types of errors
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Error)]
 pub enum TfError {
     /// Error due to looking up too far in the past. I.E the information is no longer available in the TF Cache.
-    AttemptedLookupInPast,
-    /// Error due ti the transform not yet being available.
-    AttemptedLookUpInFuture,
+    #[error("tf_rosrust: AttemptedLookupInPast {:?} < {:?}",.0, .1)]
+    AttemptedLookupInPast(Time, TransformStamped),
+    /// Error due to the transform not yet being available.
+    #[error("tf_rosrust: AttemptedLookupInFuture {:?} < {:?}",.0, .1)]
+    AttemptedLookUpInFuture(TransformStamped, Time),
     /// There is no path between the from and to frame.
-    CouldNotFindTransform,
+    #[error("tf_rosrust: CouldNotFindTransform {} -> {} ({:?})", .0, .1, .2)]
+    CouldNotFindTransform(String, String, HashMap<String, HashSet<String>>),
     /// In the event that a write is simultaneously happening with a read of the same tf buffer
+    #[error("tf_rosrust: CouldNotAcquireLock")]
     CouldNotAcquireLock,
 }

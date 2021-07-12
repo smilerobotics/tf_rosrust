@@ -55,10 +55,16 @@ impl TfIndividualTransformChain {
             Ok(x) => return Ok(self.transform_chain.get(x).unwrap().tf.clone()),
             Err(x) => {
                 if x == 0 {
-                    return Err(TfError::AttemptedLookupInPast);
+                    return Err(TfError::AttemptedLookupInPast(
+                        time,
+                        self.transform_chain.first().unwrap().tf.clone(),
+                    ));
                 }
                 if x >= self.transform_chain.len() {
-                    return Err(TfError::AttemptedLookUpInFuture);
+                    return Err(TfError::AttemptedLookUpInFuture(
+                        self.transform_chain.last().unwrap().tf.clone(),
+                        time,
+                    ));
                 }
                 let tf1 = self
                     .transform_chain
