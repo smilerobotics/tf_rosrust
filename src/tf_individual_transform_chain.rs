@@ -13,7 +13,7 @@ pub(crate) struct TfIndividualTransformChain {
     buffer_size: usize,
     static_tf: bool,
     //TODO:  Implement a circular buffer. Current method is slowww.
-    transform_chain: Vec<OrderedTF>,
+    pub(crate) transform_chain: Vec<OrderedTF>,
 }
 
 impl TfIndividualTransformChain {

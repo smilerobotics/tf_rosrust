@@ -394,6 +394,90 @@ mod test {
         assert_approx_eq(res.unwrap(), expected);
     }
 
+    #[test]
+    fn test_add_transform() {
+        const PARENT: &'static str = "parent";
+        const CHILD0: &'static str = "child0";
+        const CHILD1: &'static str = "child1";
+
+        let mut tf_buffer = TfBuffer::new();
+        let transform00 = TransformStamped {
+            header: Header {
+                frame_id: PARENT.to_string(),
+                stamp: rosrust::Time { sec: 0, nsec: 0 },
+                ..Default::default()
+            },
+            child_frame_id: CHILD0.to_string(),
+            ..Default::default()
+        };
+        let transform01 = TransformStamped {
+            header: Header {
+                frame_id: PARENT.to_string(),
+                stamp: rosrust::Time { sec: 1, nsec: 0 },
+                ..Default::default()
+            },
+            child_frame_id: CHILD0.to_string(),
+            ..Default::default()
+        };
+        let transform1 = TransformStamped {
+            header: Header {
+                frame_id: PARENT.to_string(),
+                ..Default::default()
+            },
+            child_frame_id: CHILD1.to_string(),
+            ..Default::default()
+        };
+        let transform0_key = TfGraphNode {
+            child: CHILD0.to_owned(),
+            parent: PARENT.to_owned(),
+        };
+        let transform1_key = TfGraphNode {
+            child: CHILD1.to_owned(),
+            parent: PARENT.to_owned(),
+        };
+        let static_tf = true;
+        tf_buffer.add_transform(&transform00, static_tf);
+        assert_eq!(tf_buffer.child_transform_index.len(), 1);
+        assert!(tf_buffer.child_transform_index.contains_key(PARENT));
+        let children = tf_buffer.child_transform_index.get(PARENT).unwrap();
+        assert_eq!(children.len(), 1);
+        assert!(children.contains(CHILD0));
+        assert_eq!(tf_buffer.transform_data.len(), 1);
+        assert!(tf_buffer.transform_data.contains_key(&transform0_key));
+        let data = tf_buffer.transform_data.get(&transform0_key);
+        assert!(data.is_some());
+        assert_eq!(data.unwrap().transform_chain.len(), 1);
+
+        tf_buffer.add_transform(&transform01, static_tf);
+        assert_eq!(tf_buffer.child_transform_index.len(), 1);
+        assert!(tf_buffer.child_transform_index.contains_key(PARENT));
+        let children = tf_buffer.child_transform_index.get(PARENT).unwrap();
+        assert_eq!(children.len(), 1);
+        assert!(children.contains(CHILD0));
+        assert_eq!(tf_buffer.transform_data.len(), 1);
+        assert!(tf_buffer.transform_data.contains_key(&transform0_key));
+        let data = tf_buffer.transform_data.get(&transform0_key);
+        assert!(data.is_some());
+        assert_eq!(data.unwrap().transform_chain.len(), 2);
+
+        tf_buffer.add_transform(&transform1, static_tf);
+        assert_eq!(tf_buffer.child_transform_index.len(), 1);
+        assert!(tf_buffer.child_transform_index.contains_key(PARENT));
+        let children = tf_buffer.child_transform_index.get(PARENT).unwrap();
+        assert_eq!(children.len(), 2);
+        assert!(children.contains(CHILD0));
+        assert!(children.contains(CHILD1));
+        assert_eq!(tf_buffer.transform_data.len(), 2);
+        assert!(tf_buffer.transform_data.contains_key(&transform0_key));
+        assert!(tf_buffer.transform_data.contains_key(&transform1_key));
+        let data = tf_buffer.transform_data.get(&transform0_key);
+        assert!(data.is_some());
+        assert_eq!(data.unwrap().transform_chain.len(), 2);
+        let data = tf_buffer.transform_data.get(&transform1_key);
+        assert!(data.is_some());
+        assert_eq!(data.unwrap().transform_chain.len(), 1);
+    }
+
     fn assert_approx_eq(msg1: TransformStamped, msg2: TransformStamped) {
         assert_eq!(msg1.header, msg2.header);
         assert_eq!(msg1.child_frame_id, msg2.child_frame_id);
