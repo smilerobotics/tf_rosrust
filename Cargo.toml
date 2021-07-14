@@ -1,6 +1,6 @@
 [package]
 name = "tf_rosrust"
-version = "0.0.1"
+version = "0.0.2"
 authors = [
     "Arjo Chakravarty <arjo129@gmail.com>",
     "Michael Maerz <maerz@magazino.eu>",
