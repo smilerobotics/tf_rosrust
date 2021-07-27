@@ -1,4 +1,6 @@
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{hash_map::Entry, HashMap, HashSet, VecDeque};
+
+use rosrust::Duration;
 
 use crate::{
     tf_error::TfError,
@@ -15,16 +17,24 @@ use crate::{
 };
 
 #[derive(Clone, Debug)]
-pub(crate) struct TfBuffer {
+pub struct TfBuffer {
     child_transform_index: HashMap<String, HashSet<String>>,
     transform_data: HashMap<TfGraphNode, TfIndividualTransformChain>,
+    cache_duration: Duration,
 }
+
+const DEFAULT_CACHE_DURATION_SECONDS: i32 = 10;
 
 impl TfBuffer {
     pub(crate) fn new() -> Self {
+        Self::new_with_duration(Duration::from_seconds(DEFAULT_CACHE_DURATION_SECONDS))
+    }
+
+    pub fn new_with_duration(cache_duration: Duration) -> Self {
         TfBuffer {
             child_transform_index: HashMap::new(),
             transform_data: HashMap::new(),
+            cache_duration,
         }
     }
 
@@ -47,10 +57,14 @@ impl TfBuffer {
             parent: transform.header.frame_id.clone(),
         };
 
-        self.transform_data
-            .entry(key)
-            .or_insert_with(|| TfIndividualTransformChain::new(static_tf))
-            .add_to_buffer(transform.clone());
+        match self.transform_data.entry(key) {
+            Entry::Occupied(e) => e.into_mut(),
+            Entry::Vacant(e) => e.insert(TfIndividualTransformChain::new(
+                static_tf,
+                self.cache_duration,
+            )),
+        }
+        .add_to_buffer(transform.clone());
     }
 
     /// Retrieves the transform path
@@ -173,8 +187,15 @@ impl TfBuffer {
 
 #[cfg(test)]
 mod test {
+    use rosrust::Time;
+
     use super::*;
     use crate::transforms::geometry_msgs::{Quaternion, Vector3};
+
+    const PARENT: &str = "parent";
+    const CHILD0: &str = "child0";
+    const CHILD1: &str = "child1";
+
     /// This function builds a tree consisting of the following items:
     /// * a world coordinate frame
     /// * an item in the world frame at (1,0,0)
@@ -384,10 +405,6 @@ mod test {
 
     #[test]
     fn test_add_transform() {
-        const PARENT: &str = "parent";
-        const CHILD0: &str = "child0";
-        const CHILD1: &str = "child1";
-
         let mut tf_buffer = TfBuffer::new();
         let transform00 = TransformStamped {
             header: Header {
@@ -464,6 +481,117 @@ mod test {
         let data = tf_buffer.transform_data.get(&transform1_key);
         assert!(data.is_some());
         assert_eq!(data.unwrap().transform_chain.len(), 1);
+    }
+
+    #[test]
+    fn test_cache_duration() {
+        let mut tf_buffer = TfBuffer::new_with_duration(Duration::from_seconds(1));
+        let transform00 = TransformStamped {
+            header: Header {
+                frame_id: PARENT.to_string(),
+                stamp: rosrust::Time { sec: 0, nsec: 0 },
+                ..Default::default()
+            },
+            child_frame_id: CHILD0.to_string(),
+            ..Default::default()
+        };
+        let transform01 = TransformStamped {
+            header: Header {
+                frame_id: PARENT.to_string(),
+                stamp: rosrust::Time { sec: 1, nsec: 0 },
+                ..Default::default()
+            },
+            child_frame_id: CHILD0.to_string(),
+            ..Default::default()
+        };
+        let transform02 = TransformStamped {
+            header: Header {
+                frame_id: PARENT.to_string(),
+                stamp: rosrust::Time { sec: 2, nsec: 0 },
+                ..Default::default()
+            },
+            child_frame_id: CHILD0.to_string(),
+            ..Default::default()
+        };
+        let transform0_key = TfGraphNode {
+            child: CHILD0.to_owned(),
+            parent: PARENT.to_owned(),
+        };
+
+        let static_tf = true;
+        tf_buffer.add_transform(&transform00, static_tf);
+        assert_eq!(tf_buffer.child_transform_index.len(), 1);
+        assert_eq!(tf_buffer.transform_data.len(), 1);
+        assert!(tf_buffer.transform_data.contains_key(&transform0_key));
+        let data = tf_buffer.transform_data.get(&transform0_key);
+        assert!(data.is_some());
+        assert_eq!(data.unwrap().transform_chain.len(), 1);
+        assert_eq!(
+            data.unwrap()
+                .transform_chain
+                .get(0)
+                .unwrap()
+                .tf
+                .header
+                .stamp,
+            Time::from_nanos(0)
+        );
+
+        tf_buffer.add_transform(&transform01, static_tf);
+        assert_eq!(tf_buffer.child_transform_index.len(), 1);
+        assert_eq!(tf_buffer.transform_data.len(), 1);
+        assert!(tf_buffer.transform_data.contains_key(&transform0_key));
+        let data = tf_buffer.transform_data.get(&transform0_key);
+        assert!(data.is_some());
+        assert_eq!(data.unwrap().transform_chain.len(), 2);
+        assert_eq!(
+            data.unwrap()
+                .transform_chain
+                .get(0)
+                .unwrap()
+                .tf
+                .header
+                .stamp,
+            Time::from_nanos(0)
+        );
+        assert_eq!(
+            data.unwrap()
+                .transform_chain
+                .get(1)
+                .unwrap()
+                .tf
+                .header
+                .stamp,
+            Time::from_nanos(1_000_000_000)
+        );
+
+        tf_buffer.add_transform(&transform02, static_tf);
+        assert_eq!(tf_buffer.child_transform_index.len(), 1);
+        assert_eq!(tf_buffer.transform_data.len(), 1);
+        assert!(tf_buffer.transform_data.contains_key(&transform0_key));
+        let data = tf_buffer.transform_data.get(&transform0_key);
+        assert!(data.is_some());
+        assert_eq!(data.unwrap().transform_chain.len(), 2);
+        assert_eq!(
+            data.unwrap()
+                .transform_chain
+                .get(0)
+                .unwrap()
+                .tf
+                .header
+                .stamp,
+            Time::from_nanos(1_000_000_000)
+        );
+        assert_eq!(
+            data.unwrap()
+                .transform_chain
+                .get(1)
+                .unwrap()
+                .tf
+                .header
+                .stamp,
+            Time::from_nanos(2_000_000_000)
+        );
     }
 
     fn assert_approx_eq(msg1: TransformStamped, msg2: TransformStamped) {

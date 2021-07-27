@@ -34,7 +34,11 @@ pub struct TfListener {
 impl TfListener {
     /// Create a new TfListener
     pub fn new() -> Self {
-        let buff = RwLock::new(TfBuffer::new());
+        Self::new_with_buffer(TfBuffer::new())
+    }
+
+    pub fn new_with_buffer(tf_buffer: TfBuffer) -> Self {
+        let buff = RwLock::new(tf_buffer);
         let arc = Arc::new(buff);
         let r1 = arc.clone();
         let _dynamic_subscriber = rosrust::subscribe("tf", 100, move |v: TFMessage| {

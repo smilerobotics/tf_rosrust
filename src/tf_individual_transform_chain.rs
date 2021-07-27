@@ -1,3 +1,5 @@
+use rosrust::{Duration, Time};
+
 use crate::{
     ordered_tf::OrderedTF,
     tf_error::TfError,
@@ -10,22 +12,27 @@ fn get_nanos(dur: rosrust::Duration) -> i64 {
 
 #[derive(Clone, Debug)]
 pub(crate) struct TfIndividualTransformChain {
-    buffer_size: usize,
+    cache_duration: Duration,
     static_tf: bool,
     //TODO:  Implement a circular buffer. Current method is slowww.
     pub(crate) transform_chain: Vec<OrderedTF>,
+    latest_stamp: Time,
 }
 
 impl TfIndividualTransformChain {
-    pub fn new(static_tf: bool) -> Self {
+    pub fn new(static_tf: bool, cache_duration: Duration) -> Self {
         Self {
-            buffer_size: 100,
+            cache_duration,
             transform_chain: Vec::new(),
             static_tf,
+            latest_stamp: Time::from_nanos(0),
         }
     }
 
     pub fn add_to_buffer(&mut self, msg: TransformStamped) {
+        if msg.header.stamp > self.latest_stamp {
+            self.latest_stamp = msg.header.stamp;
+        }
         let res = self
             .transform_chain
             .binary_search(&OrderedTF { tf: msg.clone() });
@@ -35,8 +42,19 @@ impl TfIndividualTransformChain {
             Err(x) => self.transform_chain.insert(x, OrderedTF { tf: msg }),
         }
 
-        if self.transform_chain.len() > self.buffer_size {
-            self.transform_chain.remove(0);
+        let time_to_keep = if self.latest_stamp > Time::from_nanos(0) + self.cache_duration {
+            self.latest_stamp - self.cache_duration
+        } else {
+            Time::from_nanos(0)
+        };
+        while !self.transform_chain.is_empty() {
+            if let Some(first) = self.transform_chain.first() {
+                if first.tf.header.stamp < time_to_keep {
+                    self.transform_chain.remove(0);
+                } else {
+                    break;
+                }
+            }
         }
     }
 
