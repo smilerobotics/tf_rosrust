@@ -384,9 +384,9 @@ mod test {
 
     #[test]
     fn test_add_transform() {
-        const PARENT: &'static str = "parent";
-        const CHILD0: &'static str = "child0";
-        const CHILD1: &'static str = "child1";
+        const PARENT: &str = "parent";
+        const CHILD0: &str = "child0";
+        const CHILD1: &str = "child1";
 
         let mut tf_buffer = TfBuffer::new();
         let transform00 = TransformStamped {
