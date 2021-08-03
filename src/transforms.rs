@@ -72,7 +72,7 @@ pub fn get_inverse(trans: &TransformStamped) -> TransformStamped {
 pub fn chain_transforms(transforms: &[Transform]) -> Transform {
     let mut final_transform = Isometry3::identity();
     for t in transforms {
-        let tf = isometry_from_transform(&t);
+        let tf = isometry_from_transform(t);
         final_transform *= tf;
     }
     isometry_to_transform(final_transform)
