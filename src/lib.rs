@@ -24,4 +24,5 @@ mod tf_individual_transform_chain;
 pub mod transforms;
 pub use transforms::geometry_msgs::TransformStamped;
 mod tf_listener;
+pub use tf_buffer::TfBuffer;
 pub use tf_listener::TfListener;
