@@ -118,7 +118,7 @@ impl TfIndividualTransformChain {
         if self.static_tf {
             return true;
         }
-        match self.transform_chain.binary_search(&OrderedTF {
+        !matches!(self.transform_chain.binary_search(&OrderedTF {
             tf: TransformStamped {
                 header: Header {
                     stamp: time,
@@ -126,9 +126,6 @@ impl TfIndividualTransformChain {
                 },
                 ..Default::default()
             },
-        }) {
-            Err(x) if x == 0 || x >= self.transform_chain.len() => false,
-            _ => true,
-        }
+        }), Err(x) if x == 0 || x >= self.transform_chain.len())
     }
 }
