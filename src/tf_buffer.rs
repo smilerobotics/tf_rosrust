@@ -68,7 +68,12 @@ impl TfBuffer {
     }
 
     /// Retrieves the transform path
-    fn retrieve_transform_path(&self, from: String, to: String) -> Result<Vec<String>, TfError> {
+    fn retrieve_transform_path(
+        &self,
+        from: String,
+        to: String,
+        time: rosrust::Time,
+    ) -> Result<Vec<String>, TfError> {
         let mut res = vec![];
         let mut frontier: VecDeque<String> = VecDeque::new();
         let mut visited: HashSet<String> = HashSet::new();
@@ -86,9 +91,19 @@ impl TfBuffer {
                     if visited.contains(&v.to_string()) {
                         continue;
                     }
-                    parents.insert(v.to_string(), current_node.clone());
-                    frontier.push_front(v.to_string());
-                    visited.insert(v.to_string());
+
+                    if self
+                        .transform_data
+                        .get(&TfGraphNode {
+                            child: v.clone(),
+                            parent: current_node.clone(),
+                        })
+                        .map_or(false, |chain| chain.has_valid_transform(time))
+                    {
+                        parents.insert(v.to_string(), current_node.clone());
+                        frontier.push_front(v.to_string());
+                        visited.insert(v.to_string());
+                    }
                 }
             }
         }
@@ -121,7 +136,7 @@ impl TfBuffer {
     ) -> Result<TransformStamped, TfError> {
         let from = from.to_string();
         let to = to.to_string();
-        let path = self.retrieve_transform_path(from.clone(), to.clone());
+        let path = self.retrieve_transform_path(from.clone(), to.clone(), time);
 
         match path {
             Ok(path) => {

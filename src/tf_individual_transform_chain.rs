@@ -3,7 +3,9 @@ use rosrust::{Duration, Time};
 use crate::{
     ordered_tf::OrderedTF,
     tf_error::TfError,
-    transforms::{geometry_msgs::TransformStamped, interpolate, to_transform_stamped},
+    transforms::{
+        geometry_msgs::TransformStamped, interpolate, std_msgs::Header, to_transform_stamped,
+    },
 };
 
 fn get_nanos(dur: rosrust::Duration) -> i64 {
@@ -109,6 +111,24 @@ impl TfIndividualTransformChain {
                 let ros_msg = to_transform_stamped(final_tf, header.frame_id, child_frame, time);
                 Ok(ros_msg)
             }
+        }
+    }
+
+    pub fn has_valid_transform(&self, time: rosrust::Time) -> bool {
+        if self.static_tf {
+            return true;
+        }
+        match self.transform_chain.binary_search(&OrderedTF {
+            tf: TransformStamped {
+                header: Header {
+                    stamp: time,
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        }) {
+            Err(x) if x == 0 || x >= self.transform_chain.len() => false,
+            _ => true,
         }
     }
 }
