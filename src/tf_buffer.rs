@@ -607,4 +607,295 @@ mod test {
         assert!((msg1.transform.translation.y - msg2.transform.translation.y).abs() < 1e-9);
         assert!((msg1.transform.translation.z - msg2.transform.translation.z).abs() < 1e-9);
     }
+
+    /// Tests a case in which the tree structure changes dynamically
+    /// time 0-1(sec): [base] -> [camera1] -> [marker] -> [target]
+    /// time 2-3(sec): [base] -> [camera2] -> [marker] -> [target]
+    /// time 4-5(sec): [base] -> [camera1] -> [marker] -> [target]
+    #[test]
+    fn test_dynamic_tree() {
+        let mut tf_buffer = TfBuffer::new();
+
+        let base_to_camera1 = TransformStamped {
+            child_frame_id: "camera1".to_string(),
+            header: Header {
+                frame_id: "base".to_string(),
+                stamp: rosrust::Time { sec: 0, nsec: 0 },
+                seq: 1,
+            },
+            transform: Transform {
+                rotation: Quaternion {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 0.0,
+                    w: 1.0,
+                },
+                translation: Vector3 {
+                    x: 1.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+            },
+        };
+        tf_buffer.add_transform(&base_to_camera1, true);
+        tf_buffer.add_transform(&get_inverse(&base_to_camera1), true);
+
+        let base_to_camera2 = TransformStamped {
+            child_frame_id: "camera2".to_string(),
+            header: Header {
+                frame_id: "base".to_string(),
+                stamp: rosrust::Time { sec: 0, nsec: 0 },
+                seq: 1,
+            },
+            transform: Transform {
+                rotation: Quaternion {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 1.0,
+                    w: 0.0,
+                },
+                translation: Vector3 {
+                    x: -1.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+            },
+        };
+        tf_buffer.add_transform(&base_to_camera2, true);
+        tf_buffer.add_transform(&get_inverse(&base_to_camera2), true);
+
+        let marker_to_target = TransformStamped {
+            child_frame_id: "target".to_string(),
+            header: Header {
+                frame_id: "marker".to_string(),
+                stamp: rosrust::Time { sec: 0, nsec: 0 },
+                seq: 1,
+            },
+            transform: Transform {
+                rotation: Quaternion {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 0.0,
+                    w: 1.0,
+                },
+                translation: Vector3 {
+                    x: -0.5,
+                    y: 0.0,
+                    z: 0.0,
+                },
+            },
+        };
+        tf_buffer.add_transform(&marker_to_target, true);
+        tf_buffer.add_transform(&get_inverse(&marker_to_target), true);
+
+        let mut camera1_to_marker = TransformStamped {
+            child_frame_id: "marker".to_string(),
+            header: Header {
+                frame_id: "camera1".to_string(),
+                stamp: rosrust::Time { sec: 0, nsec: 0 },
+                seq: 1,
+            },
+            transform: Transform {
+                rotation: Quaternion {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 0.0,
+                    w: 1.0,
+                },
+                translation: Vector3 {
+                    x: 1.0,
+                    y: 1.0,
+                    z: 0.0,
+                },
+            },
+        };
+        tf_buffer.add_transform(&camera1_to_marker, false);
+        tf_buffer.add_transform(&get_inverse(&camera1_to_marker), false);
+
+        camera1_to_marker.header.stamp.sec = 1;
+        camera1_to_marker.header.seq += 1;
+        camera1_to_marker.transform.translation.y = -1.0;
+        tf_buffer.add_transform(&camera1_to_marker, false);
+        tf_buffer.add_transform(&get_inverse(&camera1_to_marker), false);
+
+        let mut camera2_to_marker = TransformStamped {
+            child_frame_id: "marker".to_string(),
+            header: Header {
+                frame_id: "camera2".to_string(),
+                stamp: rosrust::Time { sec: 2, nsec: 0 },
+                seq: 1,
+            },
+            transform: Transform {
+                rotation: Quaternion {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 0.0,
+                    w: 1.0,
+                },
+                translation: Vector3 {
+                    x: 1.0,
+                    y: 1.0,
+                    z: 0.0,
+                },
+            },
+        };
+        tf_buffer.add_transform(&camera2_to_marker, false);
+        tf_buffer.add_transform(&get_inverse(&camera2_to_marker), false);
+
+        camera2_to_marker.header.stamp.sec = 3;
+        camera2_to_marker.header.seq += 1;
+        camera2_to_marker.transform.translation.y = -1.0;
+        tf_buffer.add_transform(&camera2_to_marker, false);
+        tf_buffer.add_transform(&get_inverse(&camera2_to_marker), false);
+
+        let result =
+            tf_buffer.lookup_transform("base", "target", rosrust::Time { sec: 0, nsec: 0 });
+        assert_eq!(
+            result.unwrap().transform.translation,
+            Vector3 {
+                x: 1.5,
+                y: 1.0,
+                z: 0.0
+            }
+        );
+
+        let result = tf_buffer.lookup_transform(
+            "base",
+            "target",
+            rosrust::Time {
+                sec: 0,
+                nsec: 500_000_000,
+            },
+        );
+        assert_eq!(
+            result.unwrap().transform.translation,
+            Vector3 {
+                x: 1.5,
+                y: 0.0,
+                z: 0.0
+            }
+        );
+
+        let result =
+            tf_buffer.lookup_transform("base", "target", rosrust::Time { sec: 1, nsec: 0 });
+        assert_eq!(
+            result.unwrap().transform.translation,
+            Vector3 {
+                x: 1.5,
+                y: -1.0,
+                z: 0.0
+            }
+        );
+
+        let result = tf_buffer.lookup_transform(
+            "base",
+            "target",
+            rosrust::Time {
+                sec: 1,
+                nsec: 500_000_000,
+            },
+        );
+        assert!(result.is_err());
+
+        let result =
+            tf_buffer.lookup_transform("base", "target", rosrust::Time { sec: 2, nsec: 0 });
+        assert_eq!(
+            result.unwrap().transform.translation,
+            Vector3 {
+                x: -1.5,
+                y: -1.0,
+                z: 0.0
+            }
+        );
+
+        let result = tf_buffer.lookup_transform(
+            "base",
+            "target",
+            rosrust::Time {
+                sec: 2,
+                nsec: 500_000_000,
+            },
+        );
+        assert_eq!(
+            result.unwrap().transform.translation,
+            Vector3 {
+                x: -1.5,
+                y: -0.0,
+                z: 0.0
+            }
+        );
+
+        let result =
+            tf_buffer.lookup_transform("base", "target", rosrust::Time { sec: 3, nsec: 0 });
+        assert_eq!(
+            result.unwrap().transform.translation,
+            Vector3 {
+                x: -1.5,
+                y: 1.0,
+                z: 0.0
+            }
+        );
+
+        let result = tf_buffer.lookup_transform(
+            "base",
+            "target",
+            rosrust::Time {
+                sec: 3,
+                nsec: 500_000_000,
+            },
+        );
+        assert!(result.is_err());
+
+        camera1_to_marker.header.stamp.sec = 4;
+        camera1_to_marker.header.seq += 1;
+        camera1_to_marker.transform.translation.x = 0.5;
+        camera1_to_marker.transform.translation.y = 1.0;
+        tf_buffer.add_transform(&camera1_to_marker, false);
+        tf_buffer.add_transform(&get_inverse(&camera1_to_marker), false);
+
+        camera1_to_marker.header.stamp.sec = 5;
+        camera1_to_marker.header.seq += 1;
+        camera1_to_marker.transform.translation.y = -1.0;
+        tf_buffer.add_transform(&camera1_to_marker, false);
+        tf_buffer.add_transform(&get_inverse(&camera1_to_marker), false);
+
+        let result =
+            tf_buffer.lookup_transform("base", "target", rosrust::Time { sec: 4, nsec: 0 });
+        assert_eq!(
+            result.unwrap().transform.translation,
+            Vector3 {
+                x: 1.0,
+                y: 1.0,
+                z: 0.0
+            }
+        );
+
+        let result = tf_buffer.lookup_transform(
+            "base",
+            "target",
+            rosrust::Time {
+                sec: 4,
+                nsec: 500_000_000,
+            },
+        );
+        assert_eq!(
+            result.unwrap().transform.translation,
+            Vector3 {
+                x: 1.0,
+                y: 0.0,
+                z: 0.0
+            }
+        );
+
+        let result =
+            tf_buffer.lookup_transform("base", "target", rosrust::Time { sec: 5, nsec: 0 });
+        assert_eq!(
+            result.unwrap().transform.translation,
+            Vector3 {
+                x: 1.0,
+                y: -1.0,
+                z: 0.0
+            }
+        );
+    }
 }
