@@ -1,6 +1,3 @@
-extern crate rosrust;
-extern crate tf_rosrust;
-
 use tf_rosrust::TfListener;
 
 fn main() {
