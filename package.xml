@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>tf_rosrust</name>
+  <version>0.0.1</version>
+  <description>tf implementation for rosrust</description>
+
+  <maintainer email="ogura@smilerobotics.com">Smile Robotics</maintainer>
+  <license>Apache2</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>tf2_msgs</build_depend>
+
+  <export>
+  </export>
+</package>
