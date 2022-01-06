@@ -8,17 +8,17 @@ use crate::{
 /// Example usage:
 ///
 /// ```no_run
-/// use tf_rosrust::TfBroadcaster;
+/// use tf_rosrust::{TfBroadcaster, TransformStamped};
 ///
 /// rosrust::init("broadcaster");
 /// let broadcaster = TfBroadcaster::new();
 ///
-/// let rate = rosrust::rate(100);
-/// let mut tf = TransformStamped::new();
+/// let rate = rosrust::rate(100.0);
+/// let mut tf = TransformStamped::default();
 /// tf.header.frame_id = "map".to_string();
 /// tf.child_frame_id = "tf_rosrust".to_string();
 /// tf.transform.rotation.w = 1.0;
-/// let mut theta = 0.01;
+/// let mut theta = 0.01_f64;
 /// while rosrust::is_ok() {
 ///     theta += 0.01;
 ///     tf.header.stamp = rosrust::now();
