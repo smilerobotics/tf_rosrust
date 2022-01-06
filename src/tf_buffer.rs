@@ -88,7 +88,7 @@ impl TfBuffer {
             }
             if let Some(children) = self.child_transform_index.get(&current_node) {
                 for v in children {
-                    if visited.contains(&v.to_string()) {
+                    if visited.contains(v) {
                         continue;
                     }
 
