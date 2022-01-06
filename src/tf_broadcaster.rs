@@ -34,7 +34,7 @@ pub struct TfBroadcaster {
 }
 
 impl TfBroadcaster {
-    /// Create a new TfListener
+    /// Create a new TfBroadcaster
     pub fn new() -> Self {
         Self {
             publisher: rosrust::publish("/tf", 1000).unwrap(),
