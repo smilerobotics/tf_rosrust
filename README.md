@@ -14,11 +14,10 @@ This is a rust port of the [ROS tf library](http://wiki.ros.org/tf). It is inten
 ## Features
 So far the only the following have been implemented:
 * `TfListener` with `lookup_transform` and time traversal.
+* `TfBroadcaster` to publish `/tf`
 
 I am still working on the following:
-* Adding `nalgebra` related conversion methods.
 * More efficient cache data structure.
-* A `TfBroadcaster` struct.
 * Weed out `unwrap()`s
 
 ## Supported platforms
