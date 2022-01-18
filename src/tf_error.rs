@@ -7,6 +7,7 @@ use crate::transforms::geometry_msgs::TransformStamped;
 
 /// Enumerates the different types of errors
 #[derive(Clone, Debug, Error)]
+#[non_exhaustive]
 pub enum TfError {
     /// Error due to looking up too far in the past. I.E the information is no longer available in the TF Cache.
     #[error("tf_rosrust: AttemptedLookupInPast {:?} < {:?}",.0, .1)]
