@@ -25,7 +25,7 @@ use crate::{
 ///     tf.transform.translation.x = theta.sin();
 ///     tf.transform.translation.y = theta.cos();
 ///     broadcaster.send_transform(tf.clone()).unwrap();
-///     println!("{:?}", tf);
+///     println!("{tf:?}");
 ///     rate.sleep();
 /// }
 /// ```

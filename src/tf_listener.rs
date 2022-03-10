@@ -19,7 +19,7 @@ use crate::{
 /// let rate = rosrust::rate(1.0);
 /// while rosrust::is_ok() {
 ///     let tf = listener.lookup_transform("camera", "base_link", rosrust::Time::new());
-///     println!("{:?}", tf);
+///     println!("{tf:?}");
 ///     rate.sleep();
 /// }
 /// ```
