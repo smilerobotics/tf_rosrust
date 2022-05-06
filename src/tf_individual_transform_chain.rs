@@ -106,12 +106,16 @@ impl TfIndividualTransformChain {
     }
 
     pub fn has_valid_transform(&self, time: rosrust::Time) -> bool {
+        if self.transform_chain.is_empty() {
+            return false;
+        }
+
         if self.static_tf {
             return true;
         }
-        match binary_search_time(&self.transform_chain, time) {
-            Ok(_) => true,
-            Err(x) => x != 0 && x < self.transform_chain.len(),
-        }
+
+        let first = self.transform_chain.first().unwrap();
+        let last = self.transform_chain.last().unwrap();
+        time >= first.header.stamp && time <= last.header.stamp
     }
 }
