@@ -1,10 +1,9 @@
 use rosrust::{Duration, Time};
 
 use crate::{
-    ordered_tf::OrderedTF,
     tf_error::TfError,
     transforms::{
-        geometry_msgs::TransformStamped, interpolate, std_msgs::Header, to_transform_stamped,
+        geometry_msgs::TransformStamped, interpolate, to_transform_stamped,
     },
 };
 
@@ -12,12 +11,16 @@ fn get_nanos(dur: rosrust::Duration) -> i64 {
     i64::from(dur.sec) * 1_000_000_000 + i64::from(dur.nsec)
 }
 
+fn binary_search_time(chain: &[TransformStamped], time: Time) -> Result<usize, usize> {
+    chain.binary_search_by(|element| element.header.stamp.cmp(&time))
+}
+
 #[derive(Clone, Debug)]
 pub(crate) struct TfIndividualTransformChain {
     cache_duration: Duration,
     static_tf: bool,
     //TODO:  Implement a circular buffer. Current method is slowww.
-    pub(crate) transform_chain: Vec<OrderedTF>,
+    pub(crate) transform_chain: Vec<TransformStamped>,
     latest_stamp: Time,
 }
 
@@ -35,14 +38,10 @@ impl TfIndividualTransformChain {
         if msg.header.stamp > self.latest_stamp {
             self.latest_stamp = msg.header.stamp;
         }
-        let res = self
-            .transform_chain
-            .binary_search(&OrderedTF { tf: msg.clone() });
 
-        match res {
-            Ok(x) => self.transform_chain.insert(x, OrderedTF { tf: msg }),
-            Err(x) => self.transform_chain.insert(x, OrderedTF { tf: msg }),
-        }
+        let index = binary_search_time(&self.transform_chain, msg.header.stamp)
+            .unwrap_or_else(|index| index);
+        self.transform_chain.insert(index, msg);
 
         let time_to_keep = if self.latest_stamp > Time::from_nanos(0) + self.cache_duration {
             self.latest_stamp - self.cache_duration
@@ -51,7 +50,7 @@ impl TfIndividualTransformChain {
         };
         while !self.transform_chain.is_empty() {
             if let Some(first) = self.transform_chain.first() {
-                if first.tf.header.stamp < time_to_keep {
+                if first.header.stamp < time_to_keep {
                     self.transform_chain.remove(0);
                 } else {
                     break;
@@ -62,27 +61,21 @@ impl TfIndividualTransformChain {
 
     pub fn get_closest_transform(&self, time: rosrust::Time) -> Result<TransformStamped, TfError> {
         if self.static_tf {
-            return Ok(self.transform_chain.last().unwrap().tf.clone());
+            return Ok(self.transform_chain.last().unwrap().clone());
         }
 
-        let mut res = TransformStamped::default();
-        res.header.stamp = time;
-        res.transform.rotation.w = 1f64;
-
-        let res = self.transform_chain.binary_search(&OrderedTF { tf: res });
-
-        match res {
-            Ok(x) => return Ok(self.transform_chain.get(x).unwrap().tf.clone()),
+        match binary_search_time(&self.transform_chain, time) {
+            Ok(x) => return Ok(self.transform_chain.get(x).unwrap().clone()),
             Err(x) => {
                 if x == 0 {
                     return Err(TfError::AttemptedLookupInPast(
                         time,
-                        self.transform_chain.first().unwrap().tf.clone(),
+                        self.transform_chain.first().unwrap().clone(),
                     ));
                 }
                 if x >= self.transform_chain.len() {
                     return Err(TfError::AttemptedLookUpInFuture(
-                        self.transform_chain.last().unwrap().tf.clone(),
+                        self.transform_chain.last().unwrap().clone(),
                         time,
                     ));
                 }
@@ -91,17 +84,15 @@ impl TfIndividualTransformChain {
                     .get(x - 1)
                     .unwrap()
                     .clone()
-                    .tf
                     .transform;
-                let tf2 = self.transform_chain.get(x).unwrap().clone().tf.transform;
-                let time1 = self.transform_chain.get(x - 1).unwrap().tf.header.stamp;
-                let time2 = self.transform_chain.get(x).unwrap().tf.header.stamp;
-                let header = self.transform_chain.get(x).unwrap().tf.header.clone();
+                let tf2 = self.transform_chain.get(x).unwrap().clone().transform;
+                let time1 = self.transform_chain.get(x - 1).unwrap().header.stamp;
+                let time2 = self.transform_chain.get(x).unwrap().header.stamp;
+                let header = self.transform_chain.get(x).unwrap().header.clone();
                 let child_frame = self
                     .transform_chain
                     .get(x)
                     .unwrap()
-                    .tf
                     .child_frame_id
                     .clone();
                 let total_duration = get_nanos(time2 - time1) as f64;
@@ -118,14 +109,9 @@ impl TfIndividualTransformChain {
         if self.static_tf {
             return true;
         }
-        !matches!(self.transform_chain.binary_search(&OrderedTF {
-            tf: TransformStamped {
-                header: Header {
-                    stamp: time,
-                    ..Default::default()
-                },
-                ..Default::default()
-            },
-        }), Err(x) if x == 0 || x >= self.transform_chain.len())
+        match binary_search_time(&self.transform_chain, time) {
+            Ok(_) => true,
+            Err(x) => x != 0 && x < self.transform_chain.len(),
+        }
     }
 }

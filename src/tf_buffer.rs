@@ -98,7 +98,13 @@ impl TfBuffer {
                             child: v.clone(),
                             parent: current_node.clone(),
                         })
-                        .map_or(false, |chain| chain.has_valid_transform(time))
+                        .map_or(false, |chain| {
+                            let valid = chain.has_valid_transform(time);
+                            if !valid {
+                                // println!("valid: {}, chain: {:?}", valid, chain);
+                            }
+                            valid
+                        })
                     {
                         parents.insert(v.to_string(), current_node.clone());
                         frontier.push_front(v.to_string());
@@ -113,7 +119,10 @@ impl TfBuffer {
             let parent = parents.get(&r);
 
             match parent {
-                Some(x) => r = x.to_string(),
+                Some(x) => {
+                    println!("known transforms: {:?}", self.child_transform_index.clone());
+                    r = x.to_string()
+                },
                 None => {
                     return Err(TfError::CouldNotFindTransform(
                         from,

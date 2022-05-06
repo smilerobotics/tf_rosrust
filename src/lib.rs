@@ -17,7 +17,6 @@
 //! }
 //!```
 
-mod ordered_tf;
 mod tf_broadcaster;
 mod tf_buffer;
 mod tf_error;
