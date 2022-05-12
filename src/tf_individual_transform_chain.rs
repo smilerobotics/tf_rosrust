@@ -21,7 +21,6 @@ pub(crate) struct TfIndividualTransformChain {
     static_tf: bool,
     //TODO:  Implement a circular buffer. Current method is slowww.
     pub(crate) transform_chain: Vec<TransformStamped>,
-    latest_stamp: Time,
 }
 
 impl TfIndividualTransformChain {
@@ -30,32 +29,23 @@ impl TfIndividualTransformChain {
             cache_duration,
             transform_chain: Vec::new(),
             static_tf,
-            latest_stamp: Time::from_nanos(0),
         }
     }
 
-    pub fn add_to_buffer(&mut self, msg: TransformStamped) {
-        if msg.header.stamp > self.latest_stamp {
-            self.latest_stamp = msg.header.stamp;
-        }
+    pub fn newest_stamp(&self) -> Option<Time> {
+        self.transform_chain.last().map(|x| x.header.stamp)
+    }
 
+    pub fn add_to_buffer(&mut self, msg: TransformStamped) {
         let index = binary_search_time(&self.transform_chain, msg.header.stamp)
             .unwrap_or_else(|index| index);
         self.transform_chain.insert(index, msg);
 
-        let time_to_keep = if self.latest_stamp > Time::from_nanos(0) + self.cache_duration {
-            self.latest_stamp - self.cache_duration
-        } else {
-            Time::from_nanos(0)
-        };
-        while !self.transform_chain.is_empty() {
-            if let Some(first) = self.transform_chain.first() {
-                if first.header.stamp < time_to_keep {
-                    self.transform_chain.remove(0);
-                } else {
-                    break;
-                }
-            }
+        if let Some(newest_stamp) = self.newest_stamp() {
+            let time_to_keep = newest_stamp - self.cache_duration;
+            let index = binary_search_time(&self.transform_chain, time_to_keep)
+                .unwrap_or_else(|x| x);
+            self.transform_chain.drain(..index);
         }
     }
 
