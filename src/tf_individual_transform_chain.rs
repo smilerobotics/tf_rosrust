@@ -42,10 +42,12 @@ impl TfIndividualTransformChain {
         self.transform_chain.insert(index, msg);
 
         if let Some(newest_stamp) = self.newest_stamp() {
-            let time_to_keep = newest_stamp - self.cache_duration;
-            let index = binary_search_time(&self.transform_chain, time_to_keep)
-                .unwrap_or_else(|x| x);
-            self.transform_chain.drain(..index);
+            if newest_stamp > Time::from_nanos(0) + self.cache_duration {
+                let time_to_keep = newest_stamp - self.cache_duration;
+                let index = binary_search_time(&self.transform_chain, time_to_keep)
+                    .unwrap_or_else(|x| x);
+                self.transform_chain.drain(..index);
+            }
         }
     }
 
