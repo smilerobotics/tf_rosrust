@@ -548,7 +548,6 @@ mod test {
                 .transform_chain
                 .get(0)
                 .unwrap()
-                .tf
                 .header
                 .stamp,
             Time::from_nanos(0)
@@ -566,7 +565,6 @@ mod test {
                 .transform_chain
                 .get(0)
                 .unwrap()
-                .tf
                 .header
                 .stamp,
             Time::from_nanos(0)
@@ -576,7 +574,6 @@ mod test {
                 .transform_chain
                 .get(1)
                 .unwrap()
-                .tf
                 .header
                 .stamp,
             Time::from_nanos(1_000_000_000)
@@ -594,7 +591,6 @@ mod test {
                 .transform_chain
                 .get(0)
                 .unwrap()
-                .tf
                 .header
                 .stamp,
             Time::from_nanos(1_000_000_000)
@@ -604,7 +600,6 @@ mod test {
                 .transform_chain
                 .get(1)
                 .unwrap()
-                .tf
                 .header
                 .stamp,
             Time::from_nanos(2_000_000_000)
