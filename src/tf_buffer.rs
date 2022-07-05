@@ -113,9 +113,7 @@ impl TfBuffer {
             let parent = parents.get(&r);
 
             match parent {
-                Some(x) => {
-                    r = x.to_string()
-                },
+                Some(x) => r = x.to_string(),
                 None => {
                     return Err(TfError::CouldNotFindTransform(
                         from,
