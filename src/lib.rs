@@ -27,4 +27,5 @@ pub use transforms::geometry_msgs::TransformStamped;
 mod tf_listener;
 pub use tf_broadcaster::TfBroadcaster;
 pub use tf_buffer::TfBuffer;
+pub use tf_error::TfError;
 pub use tf_listener::TfListener;
