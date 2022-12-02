@@ -181,16 +181,10 @@ impl TfBuffer {
         time1: rosrust::Time,
         fixed_frame: &str,
     ) -> Result<TransformStamped, TfError> {
-        let tf1 = self.lookup_transform(from, fixed_frame, time1);
-        let tf2 = self.lookup_transform(to, fixed_frame, time2);
-        if let Err(x) = tf1 {
-            return Err(x);
-        }
-        if let Err(x) = tf2 {
-            return Err(x);
-        }
-        let transforms = get_inverse(&tf1.unwrap());
-        let result = chain_transforms(&[tf2.unwrap().transform, transforms.transform]);
+        let tf1 = self.lookup_transform(from, fixed_frame, time1)?;
+        let tf2 = self.lookup_transform(to, fixed_frame, time2)?;
+        let transforms = get_inverse(&tf1);
+        let result = chain_transforms(&[tf2.transform, transforms.transform]);
         Ok(to_transform_stamped(
             result,
             from.to_string(),
