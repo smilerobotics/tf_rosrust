@@ -60,12 +60,12 @@ impl TfIndividualTransformChain {
                 if x == 0 {
                     return Err(TfError::AttemptedLookupInPast(
                         time,
-                        self.transform_chain.first().unwrap().clone(),
+                        Box::new(self.transform_chain.first().unwrap().clone()),
                     ));
                 }
                 if x >= self.transform_chain.len() {
                     return Err(TfError::AttemptedLookUpInFuture(
-                        self.transform_chain.last().unwrap().clone(),
+                        Box::new(self.transform_chain.last().unwrap().clone()),
                         time,
                     ));
                 }
