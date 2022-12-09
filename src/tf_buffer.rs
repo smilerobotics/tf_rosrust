@@ -140,7 +140,7 @@ impl TfBuffer {
 
         match path {
             Ok(path) => {
-                let mut tflist: Vec<Transform> = Vec::new();
+                let mut tf_list: Vec<Transform> = Vec::new();
                 let mut first = from.clone();
                 for intermediate in path {
                     let node = TfGraphNode {
@@ -152,12 +152,12 @@ impl TfBuffer {
                     match transform {
                         Err(e) => return Err(e),
                         Ok(x) => {
-                            tflist.push(x.transform);
+                            tf_list.push(x.transform);
                         }
                     }
                     first = intermediate.clone();
                 }
-                let final_tf = chain_transforms(&tflist);
+                let final_tf = chain_transforms(&tf_list);
                 let msg = TransformStamped {
                     child_frame_id: to,
                     header: Header {
@@ -368,7 +368,7 @@ mod test {
 
     /// Tests an interpolated lookup.
     #[test]
-    fn test_basic_tf_timetravel() {
+    fn test_basic_tf_time_travel() {
         let mut tf_buffer = TfBuffer::new();
         build_test_tree(&mut tf_buffer, 0f64);
         build_test_tree(&mut tf_buffer, 1f64);

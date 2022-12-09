@@ -17,7 +17,7 @@ fn binary_search_time(chain: &[TransformStamped], time: Time) -> Result<usize, u
 pub(crate) struct TfIndividualTransformChain {
     cache_duration: Duration,
     static_tf: bool,
-    //TODO:  Implement a circular buffer. Current method is slowww.
+    //TODO:  Implement a circular buffer. Current method is slow.
     pub(crate) transform_chain: Vec<TransformStamped>,
 }
 
