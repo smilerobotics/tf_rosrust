@@ -49,7 +49,12 @@ impl TfIndividualTransformChain {
         }
     }
 
+    /// If timestamp is zero, return the latest transform.
     pub fn get_closest_transform(&self, time: rosrust::Time) -> Result<TransformStamped, TfError> {
+        if time.nanos() == 0 {
+            return Ok(self.transform_chain.last().unwrap().clone());
+        }
+
         if self.static_tf {
             return Ok(self.transform_chain.last().unwrap().clone());
         }
@@ -96,6 +101,7 @@ impl TfIndividualTransformChain {
 
         let first = self.transform_chain.first().unwrap();
         let last = self.transform_chain.last().unwrap();
-        time >= first.header.stamp && time <= last.header.stamp
+
+        time.nanos() == 0 || (time >= first.header.stamp && time <= last.header.stamp)
     }
 }
