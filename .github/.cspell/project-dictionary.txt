@@ -1,5 +1,4 @@
 arjo
-clippy
 deque
 Maerz
 nanos
@@ -12,4 +11,5 @@ rustflags
 rustfmt
 rustros
 rustup
+SIGINT
 slerp
