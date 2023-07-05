@@ -11,5 +11,4 @@ rustflags
 rustfmt
 rustros
 rustup
-SIGINT
 slerp
