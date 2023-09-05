@@ -1,5 +1,6 @@
 # tf_rosrust
-![Build and Test](https://github.com/smilerobotics/tf_rosrust/workflows/Build%20and%20Test/badge.svg) [![crates.io](https://img.shields.io/crates/v/tf_rosrust.svg)](https://crates.io/crates/tf_rosrust) [![docs](https://docs.rs/tf_rosrust/badge.svg)](https://docs.rs/tf_rosrust)
+
+[![Build Status](https://img.shields.io/github/actions/workflow/status/smilerobotics/tf_rosrust/ci.yml?branch=main&logo=github)](https://github.com/smilerobotics/tf_rosrust/actions) [![crates.io](https://img.shields.io/crates/v/tf_rosrust.svg?logo=rust)](https://crates.io/crates/tf_rosrust) [![docs](https://docs.rs/tf_rosrust/badge.svg)](https://docs.rs/tf_rosrust)
 
 This project is forked from [arjo129 rustros_tf](https://github.com/arjo129/rustros_tf),[MaxiMaerz rustros_tf](https://github.com/MaxiMaerz/rustros_tf).
 
