@@ -1,20 +1,10 @@
 pub use nalgebra;
 use nalgebra::geometry::{Isometry3, Translation3, UnitQuaternion};
 
-rosrust::rosmsg_include!(
-    geometry_msgs / Transform,
-    geometry_msgs / Pose,
-    geometry_msgs / Vector3,
-    geometry_msgs / Quaternion,
-    geometry_msgs / TransformStamped,
-    std_msgs / Header,
-    tf2_msgs / TFMessage
-);
+use crate::{Header, Pose, TransformStamped};
 
-use geometry_msgs::{Pose, Quaternion, Transform, TransformStamped, Vector3};
-use std_msgs::Header;
-
-pub fn isometry_from_pose(pose: &Pose) -> Isometry3<f64> {
+pub fn isometry_from_pose(pose: impl Into<Pose>) -> Isometry3<f64> {
+    let pose: Pose = pose.into();
     let trans = Translation3::new(pose.position.x, pose.position.y, pose.position.z);
     let rot = UnitQuaternion::new_normalize(nalgebra::geometry::Quaternion::new(
         pose.orientation.w,
@@ -26,7 +16,7 @@ pub fn isometry_from_pose(pose: &Pose) -> Isometry3<f64> {
     Isometry3::from_parts(trans, rot)
 }
 
-pub fn isometry_from_transform(tf: &Transform) -> Isometry3<f64> {
+pub fn isometry_from_transform(tf: impl Into<Trasform>) -> Isometry3<f64> {
     let trans = Translation3::new(tf.translation.x, tf.translation.y, tf.translation.z);
     let rot = UnitQuaternion::new_normalize(nalgebra::geometry::Quaternion::new(
         tf.rotation.w,
