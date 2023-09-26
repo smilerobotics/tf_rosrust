@@ -1,0 +1,15 @@
+[package]
+name = "tf2_r2r"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+
+[dependencies]
+nalgebra = "0.30"
+r2r = "0.7"
+thiserror = "1"
+tokio = { version = "1", features = ["full"] }
+futures = "0.3"
