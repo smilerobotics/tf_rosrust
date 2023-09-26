@@ -1,9 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
-use rosrust::Time;
 use thiserror::Error;
 
-use crate::transforms::geometry_msgs::TransformStamped;
+use crate::{Time, TransformStamped};
 
 /// Enumerates the different types of errors
 #[derive(Clone, Debug, Error)]
@@ -22,6 +21,10 @@ pub enum TfError {
     #[error("tf_rosrust: CouldNotAcquireLock")]
     CouldNotAcquireLock,
     /// Error of rosrust
+    #[cfg(feature = "ros")]
     #[error("tf_rosrust: rosrust error {:?}", .0)]
     Rosrust(String),
+    #[cfg(feature = "ros2")]
+    #[error("tf_rosrust: r2r error {:?}", .0)]
+    R2r(String),
 }

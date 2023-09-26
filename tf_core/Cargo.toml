@@ -7,10 +7,11 @@ edition = "2021"
 
 [features]
 ros = ["rosrust", "ros-nalgebra"]
-ros2 = []
+ros2 = ["r2r"]
 
 [dependencies]
 nalgebra = "0.29"
 thiserror = "1.0"
 rosrust = { version = "0.9", optional = true }
 ros-nalgebra = { version = "0.1.0", optional = true }
+r2r = { version = "0.7", optional = true }
