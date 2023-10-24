@@ -192,18 +192,25 @@ impl TfBuffer {
             &time1,
         ))
     }
+
+    pub fn show(&self) {
+        println!(
+            "tf_buffer.child_transform_data: {:?}",
+            self.child_transform_index
+        );
+        println!("tf_buffer.transform_data : {:?}", self.transform_data);
+    }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::utils::time_from_nanosec;
-
-    use super::*;
-
     use r2r::{
         builtin_interfaces::msg::Time,
         geometry_msgs::msg::{Quaternion, Vector3},
     };
+
+    use super::*;
+    use crate::utils::time_from_nanosec;
 
     const PARENT: &str = "parent";
     const CHILD0: &str = "child0";

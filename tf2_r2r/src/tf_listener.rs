@@ -1,11 +1,12 @@
 use std::sync::{Arc, RwLock};
 
-use crate::{tf_buffer::TfBuffer, tf_error::TfError};
-use futures::StreamExt;
+use futures::{Stream, StreamExt};
 use r2r::{
     builtin_interfaces::msg::Time, geometry_msgs::msg::TransformStamped, tf2_msgs::msg::TFMessage,
     QosProfile,
 };
+
+use crate::{tf_buffer::TfBuffer, tf_error::TfError};
 
 pub struct TfListener {
     buffer: Arc<RwLock<TfBuffer>>,
@@ -85,5 +86,10 @@ impl TfListener {
             .read()
             .unwrap()
             .lookup_transform_with_time_travel(from, time1, to, time2, fixed_frame)
+    }
+
+    /// TODO
+    pub fn show(&self) {
+        self.buffer.read().unwrap().show();
     }
 }
