@@ -22,7 +22,7 @@ pub(crate) struct TfIndividualTransformChain {
 }
 
 impl TfIndividualTransformChain {
-    pub fn new(static_tf: bool, cache_duration: Duration) -> Self {
+    pub(crate) fn new(static_tf: bool, cache_duration: Duration) -> Self {
         Self {
             cache_duration,
             transform_chain: Vec::new(),
@@ -30,11 +30,11 @@ impl TfIndividualTransformChain {
         }
     }
 
-    pub fn newest_stamp(&self) -> Option<Time> {
+    fn newest_stamp(&self) -> Option<Time> {
         self.transform_chain.last().map(|x| x.header.stamp)
     }
 
-    pub fn add_to_buffer(&mut self, msg: TransformStamped) {
+    pub(crate) fn add_to_buffer(&mut self, msg: TransformStamped) {
         let index = binary_search_time(&self.transform_chain, msg.header.stamp)
             .unwrap_or_else(|index| index);
         self.transform_chain.insert(index, msg);
@@ -50,7 +50,10 @@ impl TfIndividualTransformChain {
     }
 
     /// If timestamp is zero, return the latest transform.
-    pub fn get_closest_transform(&self, time: rosrust::Time) -> Result<TransformStamped, TfError> {
+    pub(crate) fn get_closest_transform(
+        &self,
+        time: rosrust::Time,
+    ) -> Result<TransformStamped, TfError> {
         if time.nanos() == 0 {
             return Ok(self.transform_chain.last().unwrap().clone());
         }
@@ -90,7 +93,7 @@ impl TfIndividualTransformChain {
         }
     }
 
-    pub fn has_valid_transform(&self, time: rosrust::Time) -> bool {
+    pub(crate) fn has_valid_transform(&self, time: rosrust::Time) -> bool {
         if self.transform_chain.is_empty() {
             return false;
         }
