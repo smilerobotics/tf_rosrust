@@ -15,5 +15,5 @@ homepage = "https://github.com/smilerobotics/tf_rosrust"
 
 [dependencies]
 rosrust = "0.9"
-nalgebra = "0.29"
+nalgebra = "0.30"
 thiserror = "1.0"
