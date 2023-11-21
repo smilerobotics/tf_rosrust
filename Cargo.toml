@@ -17,3 +17,12 @@ homepage = "https://github.com/smilerobotics/tf_rosrust"
 rosrust = "0.9"
 nalgebra = "0.29"
 thiserror = "1.0"
+
+[lints]
+workspace = true
+
+[workspace.lints.rust]
+# missing_debug_implementations = "warn" # TODO: Most rosrust types don't implement Debug
+# missing_docs = "warn" # TODO
+rust_2018_idioms = "warn"
+single_use_lifetimes = "warn"
