@@ -1,28 +1,33 @@
-use std::sync::{Arc, RwLock};
+use std::{
+    sync::{Arc, RwLock},
+    time::Duration,
+};
 
-use crate::{tf_buffer::TfBuffer, tf_error::TfError};
 use futures::StreamExt;
 use r2r::{
     builtin_interfaces::msg::Time, geometry_msgs::msg::TransformStamped, tf2_msgs::msg::TFMessage,
     QosProfile,
 };
 
+use crate::{tf_buffer::TfBuffer, tf_error::TfError};
+
 pub struct TfListener {
     buffer: Arc<RwLock<TfBuffer>>,
-    _node: r2r::Node,
 }
 
 impl TfListener {
     /// Create a new TfListener
-    pub fn new(node: r2r::Node) -> Self {
+    #[track_caller]
+    pub fn new(node: &mut r2r::Node) -> Self {
         Self::new_with_buffer(node, TfBuffer::new())
     }
 
-    pub fn new_with_buffer(mut node: r2r::Node, tf_buffer: TfBuffer) -> Self {
+    #[track_caller]
+    pub fn new_with_buffer(node: &mut r2r::Node, tf_buffer: TfBuffer) -> Self {
         let buff = Arc::new(RwLock::new(tf_buffer));
 
         let mut dynamic_subscriber = node
-            .subscribe::<TFMessage>("tf", QosProfile::default())
+            .subscribe::<TFMessage>("/tf", QosProfile::default())
             .unwrap();
 
         let buff_for_dynamic_sub = buff.clone();
@@ -34,11 +39,12 @@ impl TfListener {
                         .unwrap()
                         .handle_incoming_transforms(tf, false);
                 }
+                tokio::time::sleep(Duration::from_millis(100)).await;
             }
         });
 
         let mut static_subscriber = node
-            .subscribe::<TFMessage>("tf_static", QosProfile::default())
+            .subscribe::<TFMessage>("/tf_static", QosProfile::default())
             .unwrap();
 
         let buff_for_static_sub = buff.clone();
@@ -50,13 +56,11 @@ impl TfListener {
                         .unwrap()
                         .handle_incoming_transforms(tf, true);
                 }
+                tokio::time::sleep(Duration::from_millis(100)).await;
             }
         });
 
-        TfListener {
-            buffer: buff,
-            _node: node,
-        }
+        TfListener { buffer: buff }
     }
 
     /// Looks up a transform within the tree at a given time.

@@ -38,7 +38,7 @@ After installing ROS, you may simply add this crate as a dependency to your carg
 
 ```toml
 [dependencies]
-tf_rosrust = "0.0.5"
+tf_rosrust = "0.1"
 ```
 
 ## Third party software

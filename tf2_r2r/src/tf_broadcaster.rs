@@ -1,18 +1,17 @@
-use crate::tf_error::TfError;
 use r2r::{geometry_msgs::msg::TransformStamped, tf2_msgs::msg::TFMessage, QosProfile};
+
+use crate::tf_error::TfError;
 
 pub struct TfBroadcaster {
     publisher: r2r::Publisher<TFMessage>,
-    _node: r2r::Node,
 }
 
 impl TfBroadcaster {
     /// Create a new TfBroadcaster
-    pub fn new(ctx: r2r::Context) -> Self {
-        let mut node = r2r::Node::create(ctx, "tf_broadcaster", "tf2_r2r").unwrap();
+    #[track_caller]
+    pub fn new(node: &mut r2r::Node) -> Self {
         Self {
             publisher: node.create_publisher("/tf", QosProfile::default()).unwrap(),
-            _node: node,
         }
     }
 

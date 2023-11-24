@@ -1,8 +1,9 @@
 pub use nalgebra;
 use nalgebra::geometry::{Isometry3, Translation3, UnitQuaternion};
-
-use r2r::geometry_msgs::msg::{Pose, Quaternion, Transform, TransformStamped, Vector3};
-use r2r::std_msgs::msg::Header;
+use r2r::{
+    geometry_msgs::msg::{Pose, Quaternion, Transform, TransformStamped, Vector3},
+    std_msgs::msg::Header,
+};
 
 pub fn isometry_from_pose(pose: &Pose) -> Isometry3<f64> {
     let trans = Translation3::new(pose.position.x, pose.position.y, pose.position.z);

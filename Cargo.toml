@@ -1,6 +1,20 @@
 [workspace]
-members = ["tf_rosrust", "tf2_r2r"]
 resolver = "2"
+members = ["tf_rosrust", "tf2_r2r"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/smilerobotics/tf_rosrust"
+
+[workspace.dependencies]
+futures = "0.3"
+nalgebra = "0.30"
+r2r = "0.8"
+rosrust = "0.9"
+thiserror = "1.0"
+tokio = "1"
 
 [workspace.lints.rust]
 # missing_debug_implementations = "warn" # TODO: Most rosrust types don't implement Debug

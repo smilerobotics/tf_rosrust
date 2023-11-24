@@ -99,7 +99,7 @@ impl TfBuffer {
                             child: v.clone(),
                             parent: current_node.clone(),
                         })
-                        .map_or(false, |chain| chain.has_valid_transform(&time))
+                        .map_or(false, |chain| chain.has_valid_transform(time))
                     {
                         parents.insert(v.to_string(), current_node.clone());
                         frontier.push_front(v.to_string());
@@ -137,7 +137,7 @@ impl TfBuffer {
     ) -> Result<TransformStamped, TfError> {
         let from = from.to_string();
         let to = to.to_string();
-        let path = self.retrieve_transform_path(from.clone(), to.clone(), &time);
+        let path = self.retrieve_transform_path(from.clone(), to.clone(), time);
 
         match path {
             Ok(path) => {
@@ -149,7 +149,7 @@ impl TfBuffer {
                         parent: first.clone(),
                     };
                     let time_cache = self.transform_data.get(&node).unwrap();
-                    let transform = time_cache.get_closest_transform(&time);
+                    let transform = time_cache.get_closest_transform(time);
                     match transform {
                         Err(e) => return Err(e),
                         Ok(x) => {
@@ -196,14 +196,13 @@ impl TfBuffer {
 
 #[cfg(test)]
 mod test {
-    use crate::utils::time_from_nanosec;
-
-    use super::*;
-
     use r2r::{
         builtin_interfaces::msg::Time,
         geometry_msgs::msg::{Quaternion, Vector3},
     };
+
+    use super::*;
+    use crate::utils::time_from_nanosec;
 
     const PARENT: &str = "parent";
     const CHILD0: &str = "child0";
@@ -398,7 +397,6 @@ mod test {
             header: Header {
                 frame_id: PARENT.to_string(),
                 stamp: time_from_nanosec(0),
-                ..Default::default()
             },
             child_frame_id: CHILD0.to_string(),
             ..Default::default()
@@ -407,7 +405,6 @@ mod test {
             header: Header {
                 frame_id: PARENT.to_string(),
                 stamp: Time { sec: 1, nanosec: 0 },
-                ..Default::default()
             },
             child_frame_id: CHILD0.to_string(),
             ..Default::default()
@@ -478,7 +475,6 @@ mod test {
             header: Header {
                 frame_id: PARENT.to_string(),
                 stamp: time_from_nanosec(0),
-                ..Default::default()
             },
             child_frame_id: CHILD0.to_string(),
             ..Default::default()
@@ -487,7 +483,6 @@ mod test {
             header: Header {
                 frame_id: PARENT.to_string(),
                 stamp: Time { sec: 1, nanosec: 0 },
-                ..Default::default()
             },
             child_frame_id: CHILD0.to_string(),
             ..Default::default()
@@ -496,7 +491,6 @@ mod test {
             header: Header {
                 frame_id: PARENT.to_string(),
                 stamp: Time { sec: 2, nanosec: 0 },
-                ..Default::default()
             },
             child_frame_id: CHILD0.to_string(),
             ..Default::default()

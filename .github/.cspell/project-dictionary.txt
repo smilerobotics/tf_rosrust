@@ -1,7 +1,11 @@
 arjo
 deque
+DISTRO
+dpkg
+keyrings
 Maerz
 nanos
+nanosec
 nsec
 nsecs
 rosmsg

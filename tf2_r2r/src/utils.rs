@@ -2,7 +2,7 @@ use r2r::builtin_interfaces::msg::{Duration, Time};
 
 const BILLION: i64 = 1_000_000_000;
 
-pub fn time_from_nanosec(t: i64) -> Time {
+pub(crate) fn time_from_nanosec(t: i64) -> Time {
     Time {
         sec: (t / BILLION) as i32,
         nanosec: (t % BILLION) as u32,
@@ -10,7 +10,7 @@ pub fn time_from_nanosec(t: i64) -> Time {
 }
 
 /// target - delta
-pub fn sub_time_and_time(target: &Time, delta: &Time) -> Duration {
+pub(crate) fn sub_time_and_time(target: &Time, delta: &Time) -> Duration {
     if delta.sec.is_positive() {
         if target.nanosec >= delta.nanosec {
             Duration {
@@ -20,7 +20,7 @@ pub fn sub_time_and_time(target: &Time, delta: &Time) -> Duration {
         } else {
             Duration {
                 sec: target.sec - delta.sec - 1,
-                nanosec: BILLION as u32 + target.nanosec as u32 - delta.nanosec as u32,
+                nanosec: BILLION as u32 + target.nanosec - delta.nanosec,
             }
         }
     } else {
@@ -31,7 +31,7 @@ pub fn sub_time_and_time(target: &Time, delta: &Time) -> Duration {
     }
 }
 
-pub fn add_time_and_duration(t: &Time, d: &Duration) -> Time {
+pub(crate) fn add_time_and_duration(t: &Time, d: &Duration) -> Time {
     let sec = t.sec + d.sec;
     let nanosec = t.nanosec + d.nanosec;
 
@@ -41,13 +41,13 @@ pub fn add_time_and_duration(t: &Time, d: &Duration) -> Time {
     }
 }
 
-pub fn sub_duration_from_time(t: &Time, d: &Duration) -> Time {
+pub(crate) fn sub_duration_from_time(t: &Time, d: &Duration) -> Time {
     let mut sec = t.sec - d.sec;
     let mut nanosec = t.nanosec as i64 - d.nanosec as i64;
 
     if nanosec.is_negative() {
         sec -= 1;
-        nanosec = BILLION as i64 + nanosec;
+        nanosec += BILLION;
     }
 
     Time {
@@ -56,11 +56,11 @@ pub fn sub_duration_from_time(t: &Time, d: &Duration) -> Time {
     }
 }
 
-pub fn time_as_ns_i64(t: &Time) -> i64 {
+pub(crate) fn time_as_ns_i64(t: &Time) -> i64 {
     t.sec as i64 * BILLION + t.nanosec as i64
 }
 
-pub fn is_time_in_range_eq(target: &Time, min: &Time, max: &Time) -> bool {
+pub(crate) fn is_time_in_range_eq(target: &Time, min: &Time, max: &Time) -> bool {
     let target_i64 = target.sec as i64 * BILLION + target.nanosec as i64;
     let min_i64 = min.sec as i64 * BILLION + min.nanosec as i64;
     let max_i64 = max.sec as i64 * BILLION + max.nanosec as i64;
@@ -68,7 +68,7 @@ pub fn is_time_in_range_eq(target: &Time, min: &Time, max: &Time) -> bool {
     target_i64 >= min_i64 && target_i64 <= max_i64
 }
 
-pub fn is_time_later(target: &Time, past: &Time) -> bool {
+pub(crate) fn is_time_later(target: &Time, past: &Time) -> bool {
     let target_i64 = target.sec as i64 * BILLION + target.nanosec as i64;
     let past_i64 = past.sec as i64 * BILLION + past.nanosec as i64;
 

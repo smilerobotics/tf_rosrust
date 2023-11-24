@@ -1,3 +1,5 @@
+#![cfg(feature = "ros2")]
+
 mod tf_broadcaster;
 mod tf_buffer;
 mod tf_error;
@@ -5,7 +7,7 @@ mod tf_graph_node;
 mod tf_individual_transform_chain;
 mod tf_listener;
 pub mod transforms;
-pub mod utils;
+mod utils;
 
 pub use tf_broadcaster::TfBroadcaster;
 pub use tf_buffer::TfBuffer;
