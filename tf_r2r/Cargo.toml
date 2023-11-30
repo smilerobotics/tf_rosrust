@@ -1,5 +1,5 @@
 [package]
-name = "tf2_r2r"
+name = "tf_r2r"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

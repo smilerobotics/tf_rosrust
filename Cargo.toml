@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["tf_rosrust", "tf2_r2r"]
+members = ["tf_rosrust", "tf_r2r"]
 
 [workspace.package]
 version = "0.1.0"
