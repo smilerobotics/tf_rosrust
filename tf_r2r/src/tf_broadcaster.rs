@@ -1,17 +1,18 @@
-use r2r::{geometry_msgs::msg::TransformStamped, tf2_msgs::msg::TFMessage, QosProfile};
-
-use crate::tf_error::TfError;
+use crate::{
+    msg::{geometry_msgs::TransformStamped, tf2_msgs::TFMessage},
+    tf_error::TfError,
+};
 
 pub struct TfBroadcaster {
-    publisher: r2r::Publisher<TFMessage>,
+    publisher: ros2_client::Publisher<TFMessage>,
 }
 
 impl TfBroadcaster {
     /// Create a new TfBroadcaster
     #[track_caller]
-    pub fn new(node: &mut r2r::Node) -> Self {
+    pub fn new(node: &mut ros2_client::Node, tf_topic: &rustdds::Topic) -> Self {
         Self {
-            publisher: node.create_publisher("/tf", QosProfile::default()).unwrap(),
+            publisher: node.create_publisher(tf_topic, None).unwrap(),
         }
     }
 
@@ -22,7 +23,7 @@ impl TfBroadcaster {
         };
         // TODO: handle error correctly
         self.publisher
-            .publish(&tf_message)
-            .map_err(|err| TfError::R2r(err.to_string()))
+            .publish(tf_message)
+            .map_err(|err| TfError::Ros2(err.to_string()))
     }
 }

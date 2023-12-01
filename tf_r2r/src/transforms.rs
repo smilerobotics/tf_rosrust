@@ -1,8 +1,10 @@
 pub use nalgebra;
 use nalgebra::geometry::{Isometry3, Translation3, UnitQuaternion};
-use r2r::{
-    geometry_msgs::msg::{Pose, Quaternion, Transform, TransformStamped, Vector3},
-    std_msgs::msg::Header,
+use ros2_client::builtin_interfaces::Time;
+
+use crate::msg::{
+    geometry_msgs::{Pose, Quaternion, Transform, TransformStamped, Vector3},
+    std_msgs::Header,
 };
 
 pub fn isometry_from_pose(pose: &Pose) -> Isometry3<f64> {
@@ -48,7 +50,7 @@ pub fn isometry_to_transform(iso: Isometry3<f64>) -> Transform {
 pub fn get_inverse(trans: &TransformStamped) -> TransformStamped {
     TransformStamped {
         header: Header {
-            stamp: trans.header.stamp.clone(),
+            stamp: trans.header.stamp,
             frame_id: trans.child_frame_id.clone(),
         },
         child_frame_id: trans.header.frame_id.clone(),
@@ -206,14 +208,14 @@ mod test {
 
 pub(crate) fn to_transform_stamped(
     tf: Transform,
-    from: std::string::String,
-    to: std::string::String,
-    time: &r2r::builtin_interfaces::msg::Time,
+    from: String,
+    to: String,
+    time: &Time,
 ) -> TransformStamped {
     TransformStamped {
         header: Header {
             frame_id: from,
-            stamp: time.clone(),
+            stamp: *time,
         },
         child_frame_id: to,
         transform: tf,

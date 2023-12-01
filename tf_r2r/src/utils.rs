@@ -1,4 +1,4 @@
-use r2r::builtin_interfaces::msg::{Duration, Time};
+use ros2_client::builtin_interfaces::{Duration, Time};
 
 const BILLION: i64 = 1_000_000_000;
 

@@ -1,13 +1,13 @@
 use std::collections::{hash_map::Entry, HashMap, HashSet, VecDeque};
 
-use r2r::{
-    builtin_interfaces::msg::{Duration, Time},
-    geometry_msgs::msg::{Transform, TransformStamped},
-    std_msgs::msg::Header,
-    tf2_msgs::msg::TFMessage,
-};
+use ros2_client::builtin_interfaces::{Duration, Time};
 
 use crate::{
+    msg::{
+        geometry_msgs::{Transform, TransformStamped},
+        std_msgs::Header,
+        tf2_msgs::TFMessage,
+    },
     tf_error::TfError,
     tf_graph_node::TfGraphNode,
     tf_individual_transform_chain::TfIndividualTransformChain,
@@ -163,7 +163,7 @@ impl TfBuffer {
                     child_frame_id: to,
                     header: Header {
                         frame_id: from,
-                        stamp: time.clone(),
+                        stamp: *time,
                     },
                     transform: final_tf,
                 };
@@ -196,13 +196,13 @@ impl TfBuffer {
 
 #[cfg(test)]
 mod test {
-    use r2r::{
-        builtin_interfaces::msg::Time,
-        geometry_msgs::msg::{Quaternion, Vector3},
-    };
+    use ros2_client::builtin_interfaces::Time;
 
     use super::*;
-    use crate::utils::time_from_nanosec;
+    use crate::{
+        msg::geometry_msgs::{Quaternion, Vector3},
+        utils::time_from_nanosec,
+    };
 
     const PARENT: &str = "parent";
     const CHILD0: &str = "child0";

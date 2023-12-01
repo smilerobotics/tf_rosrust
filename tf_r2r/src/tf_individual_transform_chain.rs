@@ -1,9 +1,7 @@
-use r2r::{
-    builtin_interfaces::msg::{Duration, Time},
-    geometry_msgs::msg::TransformStamped,
-};
+use ros2_client::builtin_interfaces::{Duration, Time};
 
 use crate::{
+    msg::geometry_msgs::TransformStamped,
     tf_error::TfError,
     transforms::{interpolate, to_transform_stamped},
     utils::*,
@@ -37,7 +35,7 @@ impl TfIndividualTransformChain {
     }
 
     fn newest_stamp(&self) -> Option<Time> {
-        self.transform_chain.last().map(|x| x.header.stamp.clone())
+        self.transform_chain.last().map(|x| x.header.stamp)
     }
 
     pub(crate) fn add_to_buffer(&mut self, msg: TransformStamped) {
@@ -73,26 +71,20 @@ impl TfIndividualTransformChain {
             Err(x) => {
                 if x == 0 {
                     return Err(TfError::AttemptedLookupInPast(
-                        time.clone(),
+                        *time,
                         Box::new(self.transform_chain.first().unwrap().clone()),
                     ));
                 }
                 if x >= self.transform_chain.len() {
                     return Err(TfError::AttemptedLookUpInFuture(
                         Box::new(self.transform_chain.last().unwrap().clone()),
-                        time.clone(),
+                        *time,
                     ));
                 }
                 let tf1 = self.transform_chain.get(x - 1).unwrap().clone().transform;
                 let tf2 = self.transform_chain.get(x).unwrap().clone().transform;
-                let time1 = self
-                    .transform_chain
-                    .get(x - 1)
-                    .unwrap()
-                    .header
-                    .stamp
-                    .clone();
-                let time2 = self.transform_chain.get(x).unwrap().header.stamp.clone();
+                let time1 = self.transform_chain.get(x - 1).unwrap().header.stamp;
+                let time2 = self.transform_chain.get(x).unwrap().header.stamp;
                 let header = self.transform_chain.get(x).unwrap().header.clone();
                 let child_frame = self.transform_chain.get(x).unwrap().child_frame_id.clone();
                 let total_duration = get_nanos(sub_time_and_time(&time2, &time1)) as f64;

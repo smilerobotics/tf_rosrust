@@ -3,13 +3,13 @@ use std::{
     time::Duration,
 };
 
-use futures::StreamExt;
-use r2r::{
-    builtin_interfaces::msg::Time, geometry_msgs::msg::TransformStamped, tf2_msgs::msg::TFMessage,
-    QosProfile,
-};
+use ros2_client::builtin_interfaces::Time;
 
-use crate::{tf_buffer::TfBuffer, tf_error::TfError};
+use crate::{
+    msg::{geometry_msgs::TransformStamped, tf2_msgs::TFMessage},
+    tf_buffer::TfBuffer,
+    tf_error::TfError,
+};
 
 pub struct TfListener {
     buffer: Arc<RwLock<TfBuffer>>,
@@ -18,22 +18,31 @@ pub struct TfListener {
 impl TfListener {
     /// Create a new TfListener
     #[track_caller]
-    pub fn new(node: &mut r2r::Node) -> Self {
-        Self::new_with_buffer(node, TfBuffer::new())
+    pub fn new(
+        node: &mut ros2_client::Node,
+        tf_topic: &rustdds::Topic,
+        tf_static_topic: &rustdds::Topic,
+    ) -> Self {
+        Self::new_with_buffer(node, tf_topic, tf_static_topic, TfBuffer::new())
     }
 
     #[track_caller]
-    pub fn new_with_buffer(node: &mut r2r::Node, tf_buffer: TfBuffer) -> Self {
+    pub fn new_with_buffer(
+        node: &mut ros2_client::Node,
+        tf_topic: &rustdds::Topic,
+        tf_static_topic: &rustdds::Topic,
+        tf_buffer: TfBuffer,
+    ) -> Self {
         let buff = Arc::new(RwLock::new(tf_buffer));
 
-        let mut dynamic_subscriber = node
-            .subscribe::<TFMessage>("/tf", QosProfile::default())
+        let dynamic_subscriber = node
+            .create_subscription::<TFMessage>(tf_topic, None)
             .unwrap();
 
         let buff_for_dynamic_sub = buff.clone();
         tokio::spawn(async move {
             while Arc::strong_count(&buff_for_dynamic_sub) > 1 {
-                if let Some(tf) = dynamic_subscriber.next().await {
+                if let Ok((tf, _info)) = dynamic_subscriber.async_take().await {
                     buff_for_dynamic_sub
                         .write()
                         .unwrap()
@@ -43,14 +52,14 @@ impl TfListener {
             }
         });
 
-        let mut static_subscriber = node
-            .subscribe::<TFMessage>("/tf_static", QosProfile::default())
+        let static_subscriber = node
+            .create_subscription::<TFMessage>(tf_static_topic, None)
             .unwrap();
 
         let buff_for_static_sub = buff.clone();
         tokio::spawn(async move {
             while Arc::strong_count(&buff_for_static_sub) > 1 {
-                if let Some(tf) = static_subscriber.next().await {
+                if let Ok((tf, _info)) = static_subscriber.async_take().await {
                     buff_for_static_sub
                         .write()
                         .unwrap()

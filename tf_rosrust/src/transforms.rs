@@ -216,8 +216,8 @@ mod test {
 
 pub(crate) fn to_transform_stamped(
     tf: Transform,
-    from: std::string::String,
-    to: std::string::String,
+    from: String,
+    to: String,
     time: rosrust::Time,
 ) -> TransformStamped {
     TransformStamped {

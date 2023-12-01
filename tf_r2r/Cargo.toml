@@ -1,5 +1,5 @@
 [package]
-name = "tf_r2r"
+name = "tf_ros2"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -15,13 +15,11 @@ various robotics related functionality.
 This supports ROS2 using r2r crate.
 """
 
-[features]
-ros2 = ["r2r"]
-
 [dependencies]
-futures.workspace = true
 nalgebra.workspace = true
-r2r = { workspace = true, optional = true }
+ros2-client.workspace = true
+rustdds.workspace = true
+serde.workspace = true
 thiserror.workspace = true
 tokio = { workspace = true, features = ["full"] }
 

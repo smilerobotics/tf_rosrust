@@ -45,19 +45,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: echo "ROS2_DISTRO=humble" >>"${GITHUB_ENV}"
-      - name: Install ROS2
-        run: |
-          # for tf_r2r
-          sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key  -o /usr/share/keyrings/ros-archive-keyring.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
-          sudo apt-get update
-          sudo apt-get install -y ros-$ROS2_DISTRO-ros-core ros-$ROS2_DISTRO-geometry-msgs ros-$ROS2_DISTRO-tf2-msgs
       - name: cargo test
-        run: |
-          # for tf_r2r
-          source /opt/ros/$ROS2_DISTRO/setup.bash
-          cargo test --all-features
+        run: cargo test --all-features
 
   fmt:
     name: Rustfmt
@@ -80,18 +69,8 @@ jobs:
         with:
           components: clippy
       - run: echo "ROS2_DISTRO=humble" >>"${GITHUB_ENV}"
-      - name: Install ROS2
-        run: |
-          # for tf_r2r
-          sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key  -o /usr/share/keyrings/ros-archive-keyring.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
-          sudo apt-get update
-          sudo apt-get install -y ros-$ROS2_DISTRO-ros-core ros-$ROS2_DISTRO-geometry-msgs ros-$ROS2_DISTRO-tf2-msgs
       - name: cargo clippy
-        run: |
-          # for tf_r2r
-          source /opt/ros/$ROS2_DISTRO/setup.bash
-          cargo clippy --all-features --all-targets
+        run: cargo clippy --all-features --all-targets
 
   spell-check:
     runs-on: ubuntu-latest
