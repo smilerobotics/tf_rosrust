@@ -32,7 +32,7 @@ impl TfListener {
 
         let buff_for_dynamic_sub = buff.clone();
         tokio::spawn(async move {
-            loop {
+            while Arc::strong_count(&buff_for_dynamic_sub) > 1 {
                 if let Some(tf) = dynamic_subscriber.next().await {
                     buff_for_dynamic_sub
                         .write()
@@ -49,7 +49,7 @@ impl TfListener {
 
         let buff_for_static_sub = buff.clone();
         tokio::spawn(async move {
-            loop {
+            while Arc::strong_count(&buff_for_static_sub) > 1 {
                 if let Some(tf) = static_subscriber.next().await {
                     buff_for_static_sub
                         .write()
