@@ -132,6 +132,23 @@ pub fn interpolate(t1: Transform, t2: Transform, weight: f64) -> Transform {
     }
 }
 
+pub(crate) fn to_transform_stamped(
+    tf: Transform,
+    from: std::string::String,
+    to: std::string::String,
+    time: rosrust::Time,
+) -> TransformStamped {
+    TransformStamped {
+        header: Header {
+            frame_id: from,
+            stamp: time,
+            seq: 1u32,
+        },
+        child_frame_id: to,
+        transform: tf,
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -211,22 +228,5 @@ mod test {
             },
         };
         assert_eq!(interpolate(tf1, tf2, 0.5), expected);
-    }
-}
-
-pub(crate) fn to_transform_stamped(
-    tf: Transform,
-    from: std::string::String,
-    to: std::string::String,
-    time: rosrust::Time,
-) -> TransformStamped {
-    TransformStamped {
-        header: Header {
-            frame_id: from,
-            stamp: time,
-            seq: 1u32,
-        },
-        child_frame_id: to,
-        transform: tf,
     }
 }
