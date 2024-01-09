@@ -536,7 +536,7 @@ mod test {
         assert!(data.is_some());
         assert_eq!(data.unwrap().transform_chain.len(), 1);
         assert_eq!(
-            data.unwrap().transform_chain.get(0).unwrap().header.stamp,
+            data.unwrap().transform_chain[0].header.stamp,
             Time::from_nanos(0)
         );
 
@@ -548,11 +548,11 @@ mod test {
         assert!(data.is_some());
         assert_eq!(data.unwrap().transform_chain.len(), 2);
         assert_eq!(
-            data.unwrap().transform_chain.get(0).unwrap().header.stamp,
+            data.unwrap().transform_chain[0].header.stamp,
             Time::from_nanos(0)
         );
         assert_eq!(
-            data.unwrap().transform_chain.get(1).unwrap().header.stamp,
+            data.unwrap().transform_chain[1].header.stamp,
             Time::from_nanos(1_000_000_000)
         );
 
@@ -564,11 +564,11 @@ mod test {
         assert!(data.is_some());
         assert_eq!(data.unwrap().transform_chain.len(), 2);
         assert_eq!(
-            data.unwrap().transform_chain.get(0).unwrap().header.stamp,
+            data.unwrap().transform_chain[0].header.stamp,
             Time::from_nanos(1_000_000_000)
         );
         assert_eq!(
-            data.unwrap().transform_chain.get(1).unwrap().header.stamp,
+            data.unwrap().transform_chain[1].header.stamp,
             Time::from_nanos(2_000_000_000)
         );
     }
