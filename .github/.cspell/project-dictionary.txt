@@ -12,7 +12,6 @@ rosmsg
 rustc
 rustdocflags
 rustflags
-rustfmt
 rustros
 rustup
 slerp
