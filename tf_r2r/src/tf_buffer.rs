@@ -156,7 +156,7 @@ impl TfBuffer {
                             tf_list.push(x.transform);
                         }
                     }
-                    first = intermediate.clone();
+                    first.clone_from(&intermediate);
                 }
                 let final_tf = chain_transforms(&tf_list);
                 let msg = TransformStamped {
