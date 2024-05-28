@@ -3,7 +3,6 @@ resolver = "2"
 members = ["tf_rosrust", "tf_r2r"]
 
 [workspace.package]
-version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/smilerobotics/tf_rosrust"
