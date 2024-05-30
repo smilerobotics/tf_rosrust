@@ -1,8 +1,6 @@
 arjo
 deque
 DISTRO
-dpkg
-keyrings
 Maerz
 nanos
 nanosec
