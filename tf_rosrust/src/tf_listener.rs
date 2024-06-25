@@ -41,13 +41,13 @@ impl TfListener {
         let buff = RwLock::new(tf_buffer);
         let arc = Arc::new(buff);
         let r1 = arc.clone();
-        let _dynamic_subscriber = rosrust::subscribe("tf", 100, move |v: TFMessage| {
+        let _dynamic_subscriber = rosrust::subscribe("/tf", 100, move |v: TFMessage| {
             r1.write().unwrap().handle_incoming_transforms(v, false);
         })
         .unwrap();
 
         let r2 = arc.clone();
-        let _static_subscriber = rosrust::subscribe("tf_static", 100, move |v: TFMessage| {
+        let _static_subscriber = rosrust::subscribe("/tf_static", 100, move |v: TFMessage| {
             r2.write().unwrap().handle_incoming_transforms(v, true);
         })
         .unwrap();
