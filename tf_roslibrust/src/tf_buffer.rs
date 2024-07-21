@@ -1,11 +1,12 @@
 use std::collections::{hash_map::Entry, HashMap, HashSet, VecDeque};
 
-use roslibrust_codegen::{Duration, Time};
+use roslibrust_codegen::Time;
+use chrono::TimeDelta;
 
 use crate::{
     tf_error::TfError,
     tf_graph_node::TfGraphNode,
-    tf_individual_transform_chain::TfIndividualTransformChain,
+    tf_individual_transform_chain::{stamp_to_duration, TfIndividualTransformChain},
     transforms::{
         chain_transforms,
         geometry_msgs::{Transform, TransformStamped},
@@ -20,20 +21,17 @@ use crate::{
 pub struct TfBuffer {
     child_transform_index: HashMap<String, HashSet<String>>,
     transform_data: HashMap<TfGraphNode, TfIndividualTransformChain>,
-    cache_duration: Duration,
+    cache_duration: TimeDelta,
 }
 
 const DEFAULT_CACHE_DURATION_SECONDS: u16 = 10;
 
 impl TfBuffer {
     pub(crate) fn new() -> Self {
-        Self::new_with_duration(Duration {
-            sec: DEFAULT_CACHE_DURATION_SECONDS as i32,
-            nsec: 0,
-        })
+        Self::new_with_duration(TimeDelta::new(DEFAULT_CACHE_DURATION_SECONDS.into(), 0).unwrap())
     }
 
-    pub fn new_with_duration(cache_duration: Duration) -> Self {
+    pub fn new_with_duration(cache_duration: TimeDelta) -> Self {
         TfBuffer {
             child_transform_index: HashMap::new(),
             transform_data: HashMap::new(),
@@ -75,7 +73,7 @@ impl TfBuffer {
         &self,
         from: String,
         to: String,
-        time: Time,
+        stamp: Time,
     ) -> Result<Vec<String>, TfError> {
         let mut res = vec![];
         let mut frontier: VecDeque<String> = VecDeque::new();
@@ -83,6 +81,8 @@ impl TfBuffer {
         let mut parents: HashMap<String, String> = HashMap::new();
         visited.insert(from.clone());
         frontier.push_front(from.clone());
+
+        let duration = stamp_to_duration(stamp.clone());
 
         while !frontier.is_empty() {
             let current_node = frontier.pop_front().unwrap();
@@ -101,7 +101,7 @@ impl TfBuffer {
                             child: v.clone(),
                             parent: current_node.clone(),
                         })
-                        .map_or(false, |chain| chain.has_valid_transform(time))
+                        .map_or(false, |chain| chain.has_valid_transform(duration))
                     {
                         parents.insert(v.to_string(), current_node.clone());
                         frontier.push_front(v.to_string());
@@ -135,11 +135,11 @@ impl TfBuffer {
         &self,
         from: &str,
         to: &str,
-        time: Time,
+        stamp: Time,
     ) -> Result<TransformStamped, TfError> {
         let from = from.to_string();
         let to = to.to_string();
-        let path = self.retrieve_transform_path(from.clone(), to.clone(), time);
+        let path = self.retrieve_transform_path(from.clone(), to.clone(), stamp.clone());
 
         match path {
             Ok(path) => {
@@ -151,7 +151,7 @@ impl TfBuffer {
                         parent: first.clone(),
                     };
                     let time_cache = self.transform_data.get(&node).unwrap();
-                    let transform = time_cache.get_closest_transform(time);
+                    let transform = time_cache.get_closest_transform(stamp.clone());
                     match transform {
                         Err(e) => return Err(e),
                         Ok(x) => {
@@ -165,7 +165,7 @@ impl TfBuffer {
                     child_frame_id: to,
                     header: Header {
                         frame_id: from,
-                        stamp: time,
+                        stamp: stamp,
                         seq: 1,
                     },
                     transform: final_tf,
@@ -184,7 +184,7 @@ impl TfBuffer {
         time1: Time,
         fixed_frame: &str,
     ) -> Result<TransformStamped, TfError> {
-        let tf1 = self.lookup_transform(from, fixed_frame, time1)?;
+        let tf1 = self.lookup_transform(from, fixed_frame, time1.clone())?;
         let tf2 = self.lookup_transform(to, fixed_frame, time2)?;
         let transforms = get_inverse(&tf1);
         let result = chain_transforms(&[tf2.transform, transforms.transform]);
@@ -192,6 +192,7 @@ impl TfBuffer {
             result,
             from.to_string(),
             to.to_string(),
+            // TODO(lucasw) does using this stamp as opposed to time2 match roscpp/rospy?
             time1,
         ))
     }
@@ -497,7 +498,7 @@ mod test {
 
     #[test]
     fn test_cache_duration() {
-        let mut tf_buffer = TfBuffer::new_with_duration(Duration {sec: 1, nsec: 0});
+        let mut tf_buffer = TfBuffer::new_with_duration(TimeDelta::new(1, 0));
         let transform00 = TransformStamped {
             header: Header {
                 frame_id: PARENT.to_string(),

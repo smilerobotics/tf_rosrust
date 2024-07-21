@@ -38,8 +38,8 @@ pub struct TfListener {
 
 impl TfListener {
     /// Create a new TfListener
-    pub fn new(nh: &NodeHandle) -> Self {
-        Self::new_with_buffer(nh, TfBuffer::new())
+    pub async fn new(nh: &NodeHandle) -> Self {
+        Self::new_with_buffer(nh, TfBuffer::new()).await
     }
 
     pub async fn new_with_buffer(nh: &NodeHandle, tf_buffer: TfBuffer) -> Self {

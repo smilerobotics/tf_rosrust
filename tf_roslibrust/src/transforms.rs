@@ -51,7 +51,7 @@ pub fn get_inverse(trans: &TransformStamped) -> TransformStamped {
     TransformStamped {
         header: Header {
             seq: 1u32,
-            stamp: trans.header.stamp,
+            stamp: trans.header.stamp.clone(),
             frame_id: trans.child_frame_id.clone(),
         },
         child_frame_id: trans.header.frame_id.clone(),
