@@ -5,7 +5,6 @@ use crate::{
 use roslibrust::ros1::NodeHandle;
 use roslibrust::ros1::Publisher;
 
-
 /// Broadcast tf messages
 ///
 /// Example usage:
@@ -55,7 +54,8 @@ impl TfBroadcaster {
         self.publisher
             .publish(&tf_message)
             .await
-            .map_err(|err| TfError::Rosrust(err.description().to_string()))
+            // .map_err(|err| TfError::Rosrust(err.description().to_string()))
+            .map_err(|_err| TfError::Rosrust("TODO failed publish".to_string()))
     }
 }
 

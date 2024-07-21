@@ -1,13 +1,13 @@
-use roslibrust_codegen::Duration;
-use roslibrust_codegen::Time;
+use roslibrust_codegen::{Duration, Time};
 
 use crate::{
     tf_error::TfError,
     transforms::{geometry_msgs::TransformStamped, interpolate, to_transform_stamped},
 };
 
-fn get_nanos(dur: Duration) -> i64 {
-    i64::from(dur.as_secs()) * 1_000_000_000 + i64::from(dur.as_nanos())
+// TODO(lucasw) is there a reason Duration has 'sec' and Time has 'nsecs'?
+fn get_duration_seconds(dur: Duration) -> f64 {
+    f64::from(dur.sec) + f64::from(dur.nsec) / 1e9
 }
 
 fn binary_search_time(chain: &[TransformStamped], time: Time) -> Result<usize, usize> {
@@ -16,14 +16,14 @@ fn binary_search_time(chain: &[TransformStamped], time: Time) -> Result<usize, u
 
 #[derive(Clone, Debug)]
 pub(crate) struct TfIndividualTransformChain {
-    cache_duration: f64,
+    cache_duration: Duration,
     static_tf: bool,
     // TODO: Implement a circular buffer. Current method is slow.
     pub(crate) transform_chain: Vec<TransformStamped>,
 }
 
 impl TfIndividualTransformChain {
-    pub(crate) fn new(static_tf: bool, cache_duration: f64) -> Self {
+    pub(crate) fn new(static_tf: bool, cache_duration: Duration) -> Self {
         Self {
             cache_duration,
             transform_chain: Vec::new(),
@@ -41,8 +41,8 @@ impl TfIndividualTransformChain {
         self.transform_chain.insert(index, msg);
 
         if let Some(newest_stamp) = self.newest_stamp() {
-            if newest_stamp > Time::from_nanos(0) + Time::from_secs(self.cache_duration) {
-                let time_to_keep = newest_stamp - Time::from_secs(self.cache_duration);
+            if newest_stamp > (Time {secs: 0, nsecs: 0}) + self.cache_duration {
+                let time_to_keep = newest_stamp - self.cache_duration;
                 let index =
                     binary_search_time(&self.transform_chain, time_to_keep).unwrap_or_else(|x| x);
                 self.transform_chain.drain(..index);
@@ -55,7 +55,7 @@ impl TfIndividualTransformChain {
         &self,
         time: Time,
     ) -> Result<TransformStamped, TfError> {
-        if time.nanos() == 0 {
+        if time.seconds() == 0.0 {
             return Ok(self.transform_chain.last().unwrap().clone());
         }
 
@@ -84,9 +84,10 @@ impl TfIndividualTransformChain {
                 let time2 = self.transform_chain.get(x).unwrap().header.stamp;
                 let header = self.transform_chain.get(x).unwrap().header.clone();
                 let child_frame = self.transform_chain.get(x).unwrap().child_frame_id.clone();
-                let total_duration = get_nanos(time2 - time1) as f64;
-                let desired_duration = get_nanos(time - time1) as f64;
-                let weight = 1.0 - desired_duration / total_duration;
+                // interpolate between the timestamps that bracket the desired time
+                let total_duration = time2 - time1;
+                let desired_duration = time - time1;
+                let weight = 1.0 - get_duration_seconds(desired_duration) / get_duration_seconds(total_duration);
                 let final_tf = interpolate(tf1, tf2, weight);
                 let ros_msg = to_transform_stamped(final_tf, header.frame_id, child_frame, time);
                 Ok(ros_msg)
@@ -106,6 +107,6 @@ impl TfIndividualTransformChain {
         let first = self.transform_chain.first().unwrap();
         let last = self.transform_chain.last().unwrap();
 
-        time.nanos() == 0 || (time >= first.header.stamp && time <= last.header.stamp)
+        time.seconds() == 0.0 || (time >= first.header.stamp && time <= last.header.stamp)
     }
 }

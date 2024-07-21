@@ -1,7 +1,6 @@
 use std::collections::{hash_map::Entry, HashMap, HashSet, VecDeque};
 
-use roslibrust_codegen::Time;
-use tokio::time::Duration;
+use roslibrust_codegen::{Duration, Time};
 
 use crate::{
     tf_error::TfError,
@@ -24,11 +23,14 @@ pub struct TfBuffer {
     cache_duration: Duration,
 }
 
-const DEFAULT_CACHE_DURATION_SECONDS: i32 = 10;
+const DEFAULT_CACHE_DURATION_SECONDS: u16 = 10;
 
 impl TfBuffer {
     pub(crate) fn new() -> Self {
-        Self::new_with_duration(Duration::from_secs(DEFAULT_CACHE_DURATION_SECONDS))
+        Self::new_with_duration(Duration {
+            sec: DEFAULT_CACHE_DURATION_SECONDS as i32,
+            nsec: 0,
+        })
     }
 
     pub fn new_with_duration(cache_duration: Duration) -> Self {
@@ -495,7 +497,7 @@ mod test {
 
     #[test]
     fn test_cache_duration() {
-        let mut tf_buffer = TfBuffer::new_with_duration(Duration::from_secs(1));
+        let mut tf_buffer = TfBuffer::new_with_duration(Duration {sec: 1, nsec: 0});
         let transform00 = TransformStamped {
             header: Header {
                 frame_id: PARENT.to_string(),
