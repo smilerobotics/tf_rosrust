@@ -135,10 +135,64 @@ impl TfBuffer {
         &self,
         from: &str,
         to: &str,
-        stamp: Time,
+        stamp0: Time,
     ) -> Result<TransformStamped, TfError> {
         let from = from.to_string();
         let to = to.to_string();
+
+        let stamp;
+        let time0 = stamp_to_duration(stamp0.clone());
+        if time0.is_zero() {
+            let path0 = self.retrieve_transform_path(from.clone(), to.clone(), stamp0.clone());
+            match path0 {
+                Err(x) => return Err(x),
+                Ok(path0) => {
+                    let mut first = from.clone();
+                    // find the most recent timestamp
+                    let mut min_time = time0;
+                    for intermediate in path0.clone() {
+                        let node = TfGraphNode {
+                            child: intermediate.clone(),
+                            parent: first.clone(),
+                        };
+                        first.clone_from(&intermediate);
+                        let time_cache = self.transform_data.get(&node).unwrap();
+                        // TODO(lucasw) this doesn't get a coherent set of transforms when
+                        // wanting the most recent- need to find the earliest and latest
+                        // transform for each of these and get the overlap of all of them,
+                        // then use the latest of those, then use that as the header stamp
+                        // for the result as well (don't use time 0)
+                        let transform = time_cache.get_closest_transform(stamp0.clone());
+                        match transform {
+                            Err(e) => return Err(e),
+                            Ok(x) => {
+                                let intermediate_time = stamp_to_duration(x.header.stamp.clone());
+                                if intermediate_time.is_zero() {
+                                    panic!("{x:?}");
+                                }
+                                // TODO(lucaw) use Some
+                                if min_time.is_zero() {
+                                    // TODO(lucasw) if the intermediate transform is static
+                                    // is this correct- does it return the asked for time
+                                    // instead of whatever the original static frame was
+                                    min_time = intermediate_time;
+                                } else {
+                                    min_time = std::cmp::min(intermediate_time, min_time);
+                                }
+                            }
+                        }
+                    }  // search for time that is before or equal to every transform in the chain
+                    stamp = Time {
+                        secs: min_time.num_seconds() as u32,
+                        nsecs: min_time.subsec_nanos() as u32,
+                    };
+                    println!("most recent stamp {stamp:?} {min_time:?}");
+                }
+            }
+        } else {
+            stamp = stamp0;
+        }
+
         let path = self.retrieve_transform_path(from.clone(), to.clone(), stamp.clone());
 
         match path {
@@ -150,6 +204,7 @@ impl TfBuffer {
                         child: intermediate.clone(),
                         parent: first.clone(),
                     };
+                    first.clone_from(&intermediate);
                     let time_cache = self.transform_data.get(&node).unwrap();
                     // TODO(lucasw) this doesn't get a coherent set of transforms when
                     // wanting the most recent- need to find the earliest and latest
@@ -163,7 +218,6 @@ impl TfBuffer {
                             tf_list.push(x.transform);
                         }
                     }
-                    first.clone_from(&intermediate);
                 }
                 let final_tf = chain_transforms(&tf_list);
                 let msg = TransformStamped {
@@ -176,8 +230,9 @@ impl TfBuffer {
                     transform: final_tf,
                 };
                 Ok(msg)
+
             }
-            Err(x) => Err(x),
+            Err(x) => Err(x)
         }
     }
 
