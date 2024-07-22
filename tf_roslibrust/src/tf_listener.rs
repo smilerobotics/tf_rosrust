@@ -33,7 +33,7 @@ use roslibrust_codegen::Time;
 pub struct TfListener {
     buffer: Arc<RwLock<TfBuffer>>,
     _static_subscriber: Subscriber<TFMessage>,
-    _dynamic_subscriber: Subscriber<TFMessage>,
+    pub _dynamic_subscriber: Subscriber<TFMessage>,
 }
 
 impl TfListener {
@@ -64,11 +64,12 @@ impl TfListener {
         }
     }
 
-    pub async fn update_tf(&mut self) {
+    pub async fn update_tf(&mut self, tfm: TFMessage) {
         // TODO(lucasw) handle SubscriberError instead of last unwrap
-        let new_tfm = self._dynamic_subscriber.next().await.unwrap().unwrap();
+        // let new_tfm = self._dynamic_subscriber.next().await.unwrap().unwrap();
+        // println!("{tfm:?}");
         let r1 = self.buffer.clone();
-        r1.write().unwrap().handle_incoming_transforms(new_tfm, false);
+        r1.write().unwrap().handle_incoming_transforms(tfm, false);
     }
 
     pub async fn update_tf_static(&mut self) {

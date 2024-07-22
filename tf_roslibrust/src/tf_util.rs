@@ -1,4 +1,4 @@
-fn time_now() -> roslibrust_codegen::Time {
+pub fn stamp_now() -> roslibrust_codegen::Time {
     use std::time::SystemTime;
     let duration_since_epoch = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
     let stamp = roslibrust_codegen::Time {
