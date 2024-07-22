@@ -1,7 +1,7 @@
-use tf_roslibrust::TfListener;
 use roslibrust_codegen::Time;
 use std::time::SystemTime;
 
+use tf_roslibrust::TfListener;
 use tf_roslibrust::tf_util;
 
 roslibrust_codegen_macro::find_and_generate_ros_messages!();
@@ -92,8 +92,8 @@ async fn main() -> Result<(), anyhow::Error> {
             _ = tokio::time::sleep(remaining) => {
                 next_update += update_period;
                 // println!("update {remaining:?}");
-                // let lookup_stamp = Time {secs: 0, nsecs: 0};
-                let lookup_stamp = tf_util::stamp_now();
+                let lookup_stamp = Time {secs: 0, nsecs: 0};
+                // let lookup_stamp = tf_util::stamp_now();
                 let tf = listener.lookup_transform(frame1, frame2, lookup_stamp.clone());
                 // TODO(lucasw) header stamp is 0 when looking up most recent (with stamp 0)
                 // TODO(lucasw) publishing a dynamic transform followed by a static (for
