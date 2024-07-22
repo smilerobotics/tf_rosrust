@@ -64,6 +64,19 @@ impl TfListener {
         }
     }
 
+    pub async fn update_tf(&mut self) {
+        // TODO(lucasw) handle SubscriberError instead of last unwrap
+        let new_tfm = self._dynamic_subscriber.next().await.unwrap().unwrap();
+        let r1 = self.buffer.clone();
+        r1.write().unwrap().handle_incoming_transforms(new_tfm, false);
+    }
+
+    pub async fn update_tf_static(&mut self) {
+        let new_tfm = self._static_subscriber.next().await.unwrap().unwrap();
+        let r1 = self.buffer.clone();
+        r1.write().unwrap().handle_incoming_transforms(new_tfm, true);
+    }
+
     /// Looks up a transform within the tree at a given time.
     pub fn lookup_transform(
         &self,
