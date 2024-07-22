@@ -17,14 +17,21 @@ async fn main() -> Result<(), anyhow::Error> {
     // so figure out namespace then prefix it to name and topics
     let mut ns = String::from("");
     let args = std::env::args();
+    let mut args2 = Vec::new();
     {
         // get namespace
         for arg in args {
             if arg.starts_with("__ns:=") {
                ns = arg.replace("__ns:=", "");
+            } else {
+                args2.push(arg);
             }
         }
     }
+    println!("{args2:?}");
+    let frame1 = &args2[1];
+    let frame2 = &args2[2];
+    println!("lookup up '{frame1}' to '{frame2}'");
 
     let full_node_name = &format!("/{ns}/echo").replace("//", "/");
     println!("{}", format!("full ns and node name: {full_node_name}"));
@@ -32,8 +39,6 @@ async fn main() -> Result<(), anyhow::Error> {
     let nh = NodeHandle::new(&std::env::var("ROS_MASTER_URI")?, full_node_name)
         .await.unwrap();
 
-    let frame1 = "map";
-    let frame2 = "base_link";
 
     let mut listener = TfListener::new(&nh).await;
     // let mut dynamic_subscriber = nh.subscribe::<tf2_msgs::TFMessage>("/tf", 100).await.unwrap();
@@ -80,7 +85,6 @@ async fn main() -> Result<(), anyhow::Error> {
                 let lookup_stamp = tf_util::stamp_now();
                 let tf = listener.lookup_transform(frame1, frame2, lookup_stamp.clone());
                 // TODO(lucasw) header stamp is 0 when looking up most recent (with stamp 0)
-                println!("{lookup_stamp:?} {tf:?}");
                 let stamp_now = tf_util::stamp_now();
                 println!("{stamp_now:?} {lookup_stamp:?} {tf:?}");
             }
