@@ -32,7 +32,7 @@ use roslibrust_codegen::Time;
 /// it must be scoped to exist through the lifetime of the program. One way to do this is using an `Arc` or `RwLock`.
 pub struct TfListener {
     buffer: Arc<RwLock<TfBuffer>>,
-    _static_subscriber: Subscriber<TFMessage>,
+    pub _static_subscriber: Subscriber<TFMessage>,
     pub _dynamic_subscriber: Subscriber<TFMessage>,
 }
 
@@ -65,17 +65,15 @@ impl TfListener {
     }
 
     pub async fn update_tf(&mut self, tfm: TFMessage) {
-        // TODO(lucasw) handle SubscriberError instead of last unwrap
-        // let new_tfm = self._dynamic_subscriber.next().await.unwrap().unwrap();
         // println!("{tfm:?}");
         let r1 = self.buffer.clone();
         r1.write().unwrap().handle_incoming_transforms(tfm, false);
     }
 
-    pub async fn update_tf_static(&mut self) {
-        let new_tfm = self._static_subscriber.next().await.unwrap().unwrap();
+    pub async fn update_tf_static(&mut self, tfm: TFMessage) {
+        println!("static {tfm:?}");
         let r1 = self.buffer.clone();
-        r1.write().unwrap().handle_incoming_transforms(new_tfm, true);
+        r1.write().unwrap().handle_incoming_transforms(tfm, true);
     }
 
     /// Looks up a transform within the tree at a given time.
