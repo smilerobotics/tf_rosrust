@@ -151,6 +151,11 @@ impl TfBuffer {
                         parent: first.clone(),
                     };
                     let time_cache = self.transform_data.get(&node).unwrap();
+                    // TODO(lucasw) this doesn't get a coherent set of transforms when
+                    // wanting the most recent- need to find the earliest and latest
+                    // transform for each of these and get the overlap of all of them,
+                    // then use the latest of those, then use that as the header stamp
+                    // for the result as well (don't use time 0)
                     let transform = time_cache.get_closest_transform(stamp.clone());
                     match transform {
                         Err(e) => return Err(e),

@@ -58,6 +58,7 @@ impl TfIndividualTransformChain {
     ) -> Result<TransformStamped, TfError> {
         let time = stamp_to_duration(stamp.clone());
         if time.is_zero() {
+            println!("return latest");
             return Ok(self.transform_chain.last().unwrap().clone());
         }
 
