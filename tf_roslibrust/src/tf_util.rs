@@ -1,5 +1,6 @@
 use chrono::TimeDelta;
 use roslibrust_codegen::Time;
+use std::time::SystemTime;
 
 pub fn to_stamp(secs: u32, nsecs: u32) -> Time {
     roslibrust_codegen::Time {
@@ -7,12 +8,18 @@ pub fn to_stamp(secs: u32, nsecs: u32) -> Time {
         nsecs,
     }
 }
+
+pub fn duration_now() -> TimeDelta {
+    let elapsed = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
+    // println!("{} {}", elapsed.as_secs(), elapsed.subsec_nanos());
+    TimeDelta::new(elapsed.as_secs() as i64, elapsed.subsec_nanos() as u32).unwrap()
+}
+
 pub fn stamp_now() -> roslibrust_codegen::Time {
-    use std::time::SystemTime;
-    let duration_since_epoch = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
+    let duration_since_epoch = duration_now();
     to_stamp(
-        duration_since_epoch.as_secs() as u32,
-        (duration_since_epoch.as_nanos() % 1e9 as u128) as u32,
+        duration_since_epoch.num_seconds() as u32,
+        duration_since_epoch.subsec_nanos() as u32,
     )
 }
 
@@ -22,7 +29,7 @@ pub fn stamp_to_duration(stamp: Time) -> TimeDelta
 }
 
 pub fn duration_to_f64(time: TimeDelta) -> f64 {
-    time.num_seconds() as f64 + (time.num_milliseconds() as f64 / 1000.0)
+    time.num_seconds() as f64 + (time.subsec_nanos() as f64 / 1e9)
 }
 
 pub fn stamp_to_f64(stamp: Time) -> f64 {

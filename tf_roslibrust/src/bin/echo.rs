@@ -75,20 +75,23 @@ async fn main() -> Result<(), anyhow::Error> {
                 // let lookup_stamp = tf_util::stamp_now();
                 // TODO(lucasw) maybe just have a lookup_transform_recent function
                 // TODO(lucasw) swapping position of frame 1 2 to match tf2_tools echo.py
+                // let t0 = tf_util::duration_now();
                 let res = listener.lookup_transform(frame1, frame2, None);
-                let stamp_now = tf_util::stamp_now();
+                let t1 = tf_util::duration_now();
                 match res {
                     Ok(tf) => {
-                        let cur_time = tf_util::stamp_to_f64(stamp_now);
+                        // let tdiff = tf_util::duration_to_f64(t1 - t0);
+                        // println!("lookup time {:?}s", t1 - t0);
+                        let t1 = tf_util::duration_to_f64(t1);
                         let lookup_time = tf_util::stamp_to_f64(tf.header.stamp);
-                        println!("At time {lookup_time:.3}, (current time {cur_time:.3}, {:.3}s old)", cur_time - lookup_time);
+                        println!("At time {lookup_time:.3}, (current time {t1:.3}, {:.3}s old)", t1 - lookup_time);
                         println!("frame {} -> {}", tf.header.frame_id, tf.child_frame_id);
                         let xyz = tf.transform.translation;
                         println!("- Translation: [{:.3} {:.3} {:.3}]", xyz.x, xyz.y, xyz.z);
                         let quat = tf.transform.rotation;
                         println!("- Rotation: [{:.3} {:.3} {:.3} {:.3}]", quat.x, quat.y, quat.z, quat.w);
                     },
-                    Err(err) => { println!("{stamp_now:?} {err:?}"); },
+                    Err(err) => { println!("{t1:?} {err:?}"); },
                 }
                 // TODO(lucasw) publishing a dynamic transform followed by a static (for
                 // the same parent and child frames) results in CouldNotFindTransform error

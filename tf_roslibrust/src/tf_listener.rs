@@ -48,17 +48,9 @@ impl TfListener {
     pub async fn new_with_buffer(nh: &NodeHandle, tf_buffer: TfBuffer) -> Self {
         let buff = RwLock::new(tf_buffer);
         let arc = Arc::new(buff);
-        // let r1 = arc.clone();
-        let _dynamic_subscriber = nh.subscribe::<TFMessage>("/tf", 100).await.unwrap();
-        // , move |v: TFMessage| {
-        //     r1.write().unwrap().handle_incoming_transforms(v, false);
-        // })
 
-        // let r2 = arc.clone();
+        let _dynamic_subscriber = nh.subscribe::<TFMessage>("/tf", 100).await.unwrap();
         let _static_subscriber = nh.subscribe::<TFMessage>("/tf_static", 100).await.unwrap();
-        // , move |v: TFMessage| {
-        //     r2.write().unwrap().handle_incoming_transforms(v, true);
-        // })
 
         TfListener {
             buffer: arc,
