@@ -1,15 +1,11 @@
-use roslibrust_codegen::Time;
 use chrono::TimeDelta;
+use roslibrust_codegen::Time;
 
 use crate::{
     tf_error::TfError,
+    tf_util::stamp_to_duration,
     transforms::{geometry_msgs::TransformStamped, interpolate, to_transform_stamped},
 };
-
-pub fn stamp_to_duration(stamp: Time) -> TimeDelta
-{
-    TimeDelta::new(stamp.secs.into(), stamp.nsecs).unwrap()
-}
 
 fn binary_search_time(chain: &[TransformStamped], time: TimeDelta) -> Result<usize, usize> {
     chain.binary_search_by(|element| stamp_to_duration(element.header.stamp.clone()).cmp(&time))
@@ -17,6 +13,9 @@ fn binary_search_time(chain: &[TransformStamped], time: TimeDelta) -> Result<usi
 
 #[derive(Clone, Debug)]
 pub(crate) struct TfIndividualTransformChain {
+    // TODO(lucasw) it looks like every individual transform has a cache duration,
+    // so old transforms could hang around indefintely if no new ones are received with that
+    // parent-child?
     cache_duration: TimeDelta,
     static_tf: bool,
     // TODO: Implement a circular buffer. Current method is slow.
@@ -25,6 +24,7 @@ pub(crate) struct TfIndividualTransformChain {
 
 impl TfIndividualTransformChain {
     pub(crate) fn new(static_tf: bool, cache_duration: TimeDelta) -> Self {
+        // TODO(lucasw) have an enum type for static and non-static?
         Self {
             cache_duration,
             transform_chain: Vec::new(),
@@ -37,6 +37,14 @@ impl TfIndividualTransformChain {
     }
 
     pub(crate) fn add_to_buffer(&mut self, msg: TransformStamped) {
+        if self.static_tf {
+            let mut tfs = msg.clone();
+            // TODO(lucasw) tried to get rid of the magic 0, 0 static value but here it is again
+            tfs.header.stamp.secs = 0;
+            tfs.header.stamp.nsecs = 0;
+            self.transform_chain.resize(1, tfs);
+            return;
+        }
         let index = binary_search_time(&self.transform_chain, stamp_to_duration(msg.header.stamp.clone()))
             .unwrap_or_else(|index| index);
         self.transform_chain.insert(index, msg);
@@ -58,7 +66,7 @@ impl TfIndividualTransformChain {
     ) -> Result<TransformStamped, TfError> {
         // TODO(lucasw) or just have a get_most_recent_transform()
         if stamp.is_none() || self.static_tf {
-            println!("return latest");
+            // println!("return latest");
             // TODO(lucasw) don't really want to use the timestamp of this if it is static
             return Ok(self.transform_chain.last().unwrap().clone());
         }
@@ -98,6 +106,7 @@ impl TfIndividualTransformChain {
         }
     }
 
+    // TODO(lucasw) not currently using this
     pub(crate) fn has_valid_transform(&self, time: Option<TimeDelta>) -> bool {
         if self.transform_chain.is_empty() {
             return false;

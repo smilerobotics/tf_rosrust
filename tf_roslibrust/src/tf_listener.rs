@@ -71,7 +71,7 @@ impl TfListener {
     }
 
     pub async fn update_tf_static(&mut self, tfm: TFMessage) {
-        println!("static {tfm:?}");
+        // println!("static {tfm:?}");
         let r1 = self.buffer.clone();
         r1.write().unwrap().handle_incoming_transforms(tfm, true);
     }

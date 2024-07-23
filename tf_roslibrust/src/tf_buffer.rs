@@ -6,10 +6,11 @@ use chrono::TimeDelta;
 use crate::{
     tf_error::TfError,
     tf_graph_node::TfGraphNode,
-    tf_individual_transform_chain::{stamp_to_duration, TfIndividualTransformChain},
+    tf_individual_transform_chain::TfIndividualTransformChain,
+    tf_util::stamp_to_duration,
     transforms::{
         chain_transforms,
-        geometry_msgs::{Transform, TransformStamped},
+        geometry_msgs::TransformStamped,
         get_inverse,
         std_msgs::Header,
         tf2_msgs::TFMessage,
@@ -44,7 +45,6 @@ impl TfBuffer {
     pub(crate) fn handle_incoming_transforms(&mut self, transforms: TFMessage, static_tf: bool) {
         for transform in transforms.transforms {
             self.add_transform(&transform, static_tf);
-            // self.add_transform(&get_inverse(&transform), static_tf);
         }
     }
 
@@ -78,12 +78,13 @@ impl TfBuffer {
     /// traverse tf tree straight upwards until there are no more parents
     fn get_path_to_root(
         &self,
-        frame: String,
+        frame: &str,
     ) -> Result<(Vec<String>, HashSet::<String>), TfError>  {
+        let frame = frame.to_string();
         // TODO(lucasw) use an IndexMap
         let mut frame_lineage = Vec::new();
         let mut frame_lineage_visited = HashSet::<String>::new();
-        frame_lineage_visited.insert(frame.clone());
+        frame_lineage_visited.insert(frame.clone().to_string());
         frame_lineage.push(frame.clone());
 
         let mut cur_frame = frame.clone();
@@ -99,7 +100,7 @@ impl TfBuffer {
             // in time, but it's much easier to prohibit those (which means loops can exist
             // that don't overlap within cache duration of each other)
             if frame_lineage_visited.contains(&cur_frame) {
-                return Err(TfError::LoopDetected(frame, self.child_transform_index.clone()));
+                return Err(TfError::LoopDetected(frame.to_string(), self.child_transform_index.clone()));
             }
             frame_lineage_visited.insert(cur_frame.clone());
             frame_lineage.push(cur_frame.clone());
@@ -110,17 +111,9 @@ impl TfBuffer {
     /// Retrieves the transform path
     fn retrieve_transform_path(
         &self,
-        from: String,
-        to: String,
-        // stamp: Option<Time>,
+        from: &str,
+        to: &str,
     ) -> Result<Vec<String>, TfError> {
-        /*
-        let duration = match stamp {
-            Some(stamp) => Some(stamp_to_duration(stamp.clone())),
-            None => None,
-        };
-        */
-
         // for (key, value) in &self.parent_transform_index {
         //     println!("{key}: {value}");
         // }
@@ -128,10 +121,10 @@ impl TfBuffer {
 
         // Find the common parent of from and to, get the path all the way to root of each
         // then iterate through one to find find the earliest frame that is also in the other path
-        let (from_lineage, from_lineage_visited) = self.get_path_to_root(from.clone())?;
-        println!("from lineage {from_lineage:?}");
-        let (to_lineage, _) = self.get_path_to_root(to.clone())?;
-        println!("to lineage {to_lineage:?}");
+        let (from_lineage, from_lineage_visited) = self.get_path_to_root(from)?;
+        // println!("from lineage {from_lineage:?}");
+        let (to_lineage, _) = self.get_path_to_root(to)?;
+        // println!("to lineage {to_lineage:?}");
 
         // TODO(lucasw) could try to terminate above get_path_to_root by looking for the common frame there
         // make it take an optional frame to stop at, if None go to root
@@ -140,7 +133,7 @@ impl TfBuffer {
             for frame in &to_lineage {
                 if from_lineage_visited.contains(frame) {
                     common_parent = Some(frame);
-                    println!("common parent found: {frame}");
+                    // println!("common parent found: {frame}");
                     break;
                 }
             }
@@ -150,8 +143,8 @@ impl TfBuffer {
                 // at all
                 println!("disconnected trees: {from_lineage:?} - {to_lineage:?}");
                 return Err(TfError::CouldNotFindTransform(
-                    from,
-                    to,
+                    from.to_string(),
+                    to.to_string(),
                     self.child_transform_index.clone(),
                 ))
             }
@@ -164,7 +157,7 @@ impl TfBuffer {
         let mut res = vec![];
 
         for frame in &from_lineage {
-            println!("frame in from lineage {frame}");
+            // println!("frame in 'from' lineage {frame}");
             res.push(frame.clone());
             if frame == common_parent {
                 break;
@@ -174,7 +167,7 @@ impl TfBuffer {
         {
             let mut found_common_parent = false;
             for frame in (&to_lineage).iter().rev() {
-                println!("frame in to lineage {frame}");
+                // println!("frame in 'to' lineage {frame}");
                 if found_common_parent {
                     res.push(frame.clone());
                 }
@@ -183,9 +176,65 @@ impl TfBuffer {
                 }
             }
         }
-        println!("full path: {res:?}");
+        // println!("full path: {res:?}");
 
         Ok(res)
+    }
+
+    fn get_tf_list(
+        &self,
+        from: &str,
+        to: &str,
+        stamp: Option<Time>,
+    ) -> Result<Vec<TransformStamped>, TfError> {
+        let mut tf_list = Vec::<TransformStamped>::new();
+        let path0 = self.retrieve_transform_path(from, to)?;
+        // TODO(lucasw) how to iterate through path0 to get adjacent elements like
+        // this?
+        for ind in 0..path0.len() - 1 {
+            let frame0 = path0[ind].clone();
+            let frame1 = path0[ind + 1].clone();
+            let node = TfGraphNode {
+                child: frame0.clone(),
+                parent: frame1.clone(),
+            };
+            let inverse_node = TfGraphNode {
+                child: frame1.clone(),
+                parent: frame0.clone(),
+            };
+
+            // get inverse of inverse_node if this fails
+            // TODO(lucasw) it would be better if the path returned had the information on which
+            // direction the transforms need to go
+            let mut invert_transform = false;
+            let time_cache = {
+                let rv = self.transform_data.get(&node);
+                match rv {
+                    Some(time_cache) => time_cache,
+                    None => {
+                        invert_transform = true;
+                        self.transform_data.get(&inverse_node)
+                            .unwrap_or_else(|| panic!("{inverse_node:?}"))
+                    },
+                }
+            };
+
+            // TODO(lucasw) this doesn't get a coherent set of transforms when
+            // wanting the most recent- need to find the earliest and latest
+            // transform for each of these and get the overlap of all of them,
+            // then use the latest of those, then use that as the header stamp
+            // for the result as well (don't use time 0)
+            let transform = {
+                let transform = time_cache.get_closest_transform(stamp.clone())?;
+                if invert_transform {
+                    get_inverse(&transform)
+                } else {
+                    transform
+                }
+            };
+            tf_list.push(transform);
+        }
+        Ok(tf_list)
     }
 
     /// Looks up a transform within the tree at a given time.
@@ -195,114 +244,79 @@ impl TfBuffer {
         to: &str,
         stamp0: Option<Time>,
     ) -> Result<TransformStamped, TfError> {
-        let from = from.to_string();
-        let to = to.to_string();
         if from == to {
             panic!("TODO(lucasw) return identity transform");
         }
 
-        let stamp;
-        if stamp0.is_none() {
-            println!("getting most recent transform");
-            let path0 = self.retrieve_transform_path(from.clone(), to.clone());  // , stamp0.clone());
-            match path0 {
-                Err(x) => return Err(x),
-                Ok(path0) => {
-                    let mut first = from.clone();
-                    let mut min_time = None;
-                    for intermediate in path0.clone() {
-                        let node = TfGraphNode {
-                            child: intermediate.clone(),
-                            parent: first.clone(),
-                        };
-                        first.clone_from(&intermediate);
-                        // TODO(lucasw) need also get inverse node if this fails,
-                        // and then invert the transform if the inverse is found
-                        let time_cache = self.transform_data.get(&node).unwrap();
-                        // TODO(lucasw) this doesn't get a coherent set of transforms when
-                        // wanting the most recent- need to find the earliest and latest
-                        // transform for each of these and get the overlap of all of them,
-                        // then use the latest of those, then use that as the header stamp
-                        // for the result as well (don't use time 0)
-                        let transform = time_cache.get_closest_transform(stamp0.clone());
-                        match transform {
-                            Err(e) => return Err(e),
-                            Ok(x) => {
-                                let intermediate_time = stamp_to_duration(x.header.stamp.clone());
-                                if intermediate_time.is_zero() {
-                                    panic!("{x:?}");
-                                }
-                                // TODO(lucaw) use Some
+        let stamp = {
+            match stamp0 {
+                Some(stamp) => { Some(stamp) },
+                None => {
+                    // println!("getting most recent transform");
+                    let tf_list = self.get_tf_list(from, to, stamp0)?;
+                    // search for time that is before or equal to every transform in the chain,
+                    // unless the frame was static, then ignore the timestamp
+                    let min_time = {
+                        let mut min_time = None;
+                        for tf in tf_list {
+                            let tf_time = stamp_to_duration(tf.header.stamp.clone());
+                            // println!("{0} tf time {tf_time:?}", tf.child_frame_id);
+
+                            // TODO(lucasw) wouldn't need this is_zero if the tf list contents
+                            // could have a bool to show whether transform was static
+                            if !tf_time.is_zero() {
                                 if min_time.is_none() {
-                                    // TODO(lucasw) if the intermediate transform is static
+                                    // TODO(lucasw) if the tf transform is static
                                     // is this correct- does it return the asked for time
                                     // instead of whatever the original static frame was
-                                    min_time = Some(intermediate_time);
+                                    min_time = Some(tf_time);
                                 } else {
-                                    min_time = Some(std::cmp::min(intermediate_time, min_time.unwrap()));
+                                    min_time = Some(std::cmp::min(tf_time, min_time.unwrap()));
                                 }
                             }
                         }
-                    }  // search for time that is before or equal to every transform in the chain
+                        // if min_time is still None after this the chain was pure static,
+                        // then the later get_tf_list still gets a good chain
+                        min_time
+                    };
+
+                    // TODO(lucasw) will a static transform return a bad stamp?
                     match min_time {
                         Some(min_time) => {
-                            stamp = Time {
+                            let stamp = Time {
                                 secs: min_time.num_seconds() as u32,
                                 nsecs: min_time.subsec_nanos() as u32,
                             };
-                            println!("most recent stamp {stamp:?} {min_time:?}");
+                            // println!("most recent stamp {stamp:?} {min_time:?}");
+                            Some(stamp)
                         },
-                        // TODO(lucasw) is this possible given above checks?
-                        None => { panic!("don't have valid stamp"); }
+                        None => None,
                     }
-                }
+                }  // get most recent stamp
             }
-        } else {
-            stamp = stamp0.unwrap();
-        }
+        };
 
-        println!("getting transform at stamp");
-        let path = self.retrieve_transform_path(from.clone(), to.clone());  // , Some(stamp.clone()));
-
-        match path {
-            Ok(path) => {
-                let mut tf_list: Vec<Transform> = Vec::new();
-                let mut first = from.clone();
-                for intermediate in path {
-                    let node = TfGraphNode {
-                        child: intermediate.clone(),
-                        parent: first.clone(),
-                    };
-                    first.clone_from(&intermediate);
-                    let time_cache = self.transform_data.get(&node).unwrap();
-                    // TODO(lucasw) this doesn't get a coherent set of transforms when
-                    // wanting the most recent- need to find the earliest and latest
-                    // transform for each of these and get the overlap of all of them,
-                    // then use the latest of those, then use that as the header stamp
-                    // for the result as well (don't use time 0)
-                    let transform = time_cache.get_closest_transform(Some(stamp.clone()));
-                    match transform {
-                        Err(e) => return Err(e),
-                        Ok(x) => {
-                            tf_list.push(x.transform);
-                        }
+        // println!("getting transform at stamp {stamp:?}");
+        // TODO(lucasw) str vs. String here- can it all be made consistent?
+        let tf_list = self.get_tf_list(from, to, stamp.clone())?;
+        let final_tf = chain_transforms(&tf_list);
+        let msg = TransformStamped {
+            child_frame_id: to.to_string(),
+            header: Header {
+                frame_id: from.to_string(),
+                stamp: {
+                    match stamp {
+                        Some(stamp) => stamp,
+                        // the chain was pure static and there are no meaningful values
+                        // TODO(lucasw) does this match rospy/roscpp behavior?
+                        None => Time {secs: 0, nsecs: 0},
                     }
-                }
-                let final_tf = chain_transforms(&tf_list);
-                let msg = TransformStamped {
-                    child_frame_id: to,
-                    header: Header {
-                        frame_id: from,
-                        stamp: stamp,
-                        seq: 1,
-                    },
-                    transform: final_tf,
-                };
-                Ok(msg)
-
-            }
-            Err(x) => Err(x)
-        }
+                },
+                seq: 1,
+            },
+            transform: final_tf,
+        };
+        Ok(msg)
     }
 
     pub(crate) fn lookup_transform_with_time_travel(
@@ -316,7 +330,7 @@ impl TfBuffer {
         let tf1 = self.lookup_transform(from, fixed_frame, Some(time1.clone()))?;
         let tf2 = self.lookup_transform(to, fixed_frame, Some(time2))?;
         let transforms = get_inverse(&tf1);
-        let result = chain_transforms(&[tf2.transform, transforms.transform]);
+        let result = chain_transforms(&[tf2, transforms]);
         Ok(to_transform_stamped(
             result,
             from.to_string(),
@@ -371,7 +385,7 @@ mod test {
             },
         };
         buffer.add_transform(&world_to_item, true);
-        buffer.add_transform(&get_inverse(&world_to_item), true);
+        // buffer.add_transform(&get_inverse(&world_to_item), true);
 
         let world_to_base_link = TransformStamped {
             child_frame_id: "base_link".to_string(),
@@ -398,7 +412,7 @@ mod test {
             },
         };
         buffer.add_transform(&world_to_base_link, false);
-        buffer.add_transform(&get_inverse(&world_to_base_link), false);
+        // buffer.add_transform(&get_inverse(&world_to_base_link), false);
 
         let base_link_to_camera = TransformStamped {
             child_frame_id: "camera".to_string(),
@@ -425,7 +439,7 @@ mod test {
             },
         };
         buffer.add_transform(&base_link_to_camera, true);
-        buffer.add_transform(&get_inverse(&base_link_to_camera), true);
+        // buffer.add_transform(&get_inverse(&base_link_to_camera), true);
     }
 
     /// Tests a basic lookup
@@ -750,7 +764,6 @@ mod test {
             },
         };
         tf_buffer.add_transform(&base_to_camera1, true);
-        tf_buffer.add_transform(&get_inverse(&base_to_camera1), true);
 
         let base_to_camera2 = TransformStamped {
             child_frame_id: "camera2".to_string(),
@@ -774,7 +787,6 @@ mod test {
             },
         };
         tf_buffer.add_transform(&base_to_camera2, true);
-        tf_buffer.add_transform(&get_inverse(&base_to_camera2), true);
 
         let marker_to_target = TransformStamped {
             child_frame_id: "target".to_string(),
@@ -798,7 +810,6 @@ mod test {
             },
         };
         tf_buffer.add_transform(&marker_to_target, true);
-        tf_buffer.add_transform(&get_inverse(&marker_to_target), true);
 
         let mut camera1_to_marker = TransformStamped {
             child_frame_id: "marker".to_string(),
@@ -822,13 +833,11 @@ mod test {
             },
         };
         tf_buffer.add_transform(&camera1_to_marker, false);
-        tf_buffer.add_transform(&get_inverse(&camera1_to_marker), false);
 
         camera1_to_marker.header.stamp.sec = 2;
         camera1_to_marker.header.seq += 1;
         camera1_to_marker.transform.translation.y = -1.0;
         tf_buffer.add_transform(&camera1_to_marker, false);
-        tf_buffer.add_transform(&get_inverse(&camera1_to_marker), false);
 
         let mut camera2_to_marker = TransformStamped {
             child_frame_id: "marker".to_string(),
@@ -852,13 +861,11 @@ mod test {
             },
         };
         tf_buffer.add_transform(&camera2_to_marker, false);
-        tf_buffer.add_transform(&get_inverse(&camera2_to_marker), false);
 
         camera2_to_marker.header.stamp.sec = 4;
         camera2_to_marker.header.seq += 1;
         camera2_to_marker.transform.translation.y = -1.0;
         tf_buffer.add_transform(&camera2_to_marker, false);
-        tf_buffer.add_transform(&get_inverse(&camera2_to_marker), false);
 
         let result =
             tf_buffer.lookup_transform("base", "target", Some(Time { secs: 1, nsecs: 0 }));
@@ -963,13 +970,11 @@ mod test {
         camera1_to_marker.transform.translation.x = 0.5;
         camera1_to_marker.transform.translation.y = 1.0;
         tf_buffer.add_transform(&camera1_to_marker, false);
-        tf_buffer.add_transform(&get_inverse(&camera1_to_marker), false);
 
         camera1_to_marker.header.stamp.sec = 6;
         camera1_to_marker.header.seq += 1;
         camera1_to_marker.transform.translation.y = -1.0;
         tf_buffer.add_transform(&camera1_to_marker, false);
-        tf_buffer.add_transform(&get_inverse(&camera1_to_marker), false);
 
         let result =
             tf_buffer.lookup_transform("base", "target", Some(Time { secs: 5, nsecs: 0 }));

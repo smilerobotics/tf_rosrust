@@ -1,4 +1,3 @@
-use roslibrust_codegen::Time;
 use std::time::SystemTime;
 
 
@@ -37,7 +36,7 @@ async fn main() -> Result<(), anyhow::Error> {
     println!("lookup up '{frame1}' to '{frame2}'");
 
     let full_node_name = &format!("/{ns}/echo").replace("//", "/");
-    println!("{}", format!("full ns and node name: {full_node_name}"));
+    // println!("{}", format!("full ns and node name: {full_node_name}"));
 
     let nh = NodeHandle::new(&std::env::var("ROS_MASTER_URI")?, full_node_name)
         .await.unwrap();
@@ -49,7 +48,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let update_period = tokio::time::Duration::from_millis(1000);
     let mut next_update = SystemTime::now();
 
-    println!("tf loop");
+    // println!("tf loop");
     loop {
         // sleep for remaining if nothing else interrupt select, or sleep for 0 seconds
         // if already past scheduled update
@@ -97,10 +96,20 @@ async fn main() -> Result<(), anyhow::Error> {
                 // println!("update {remaining:?}");
                 // let lookup_stamp = tf_util::stamp_now();
                 // TODO(lucasw) maybe just have a lookup_transform_recent function
-                let res = listener.lookup_transform(frame1, frame2, None);
+                // TODO(lucasw) swapping position of frame 1 2 to match tf2_tools echo.py
+                let res = listener.lookup_transform(frame2, frame1, None);
                 let stamp_now = tf_util::stamp_now();
                 match res {
-                    Ok(tf) => { println!("{stamp_now:?} {tf:?}"); },
+                    Ok(tf) => {
+                        let cur_time = tf_util::stamp_to_f64(stamp_now);
+                        let lookup_time = tf_util::stamp_to_f64(tf.header.stamp);
+                        println!("At time {lookup_time:.3}, (current time {cur_time:.3}, {:.3}s old)", cur_time - lookup_time);
+                        println!("frame {} -> {}", tf.header.frame_id, tf.child_frame_id);
+                        let xyz = tf.transform.translation;
+                        println!("- Translation: [{:.3} {:.3} {:.3}]", xyz.x, xyz.y, xyz.z);
+                        let quat = tf.transform.rotation;
+                        println!("- Rotation: [{:.3} {:.3} {:.3} {:.3}]", quat.x, quat.y, quat.z, quat.w);
+                    },
                     Err(err) => { println!("{stamp_now:?} {err:?}"); },
                 }
                 // TODO(lucasw) publishing a dynamic transform followed by a static (for
