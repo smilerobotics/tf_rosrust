@@ -1,4 +1,4 @@
-use std::collections::{hash_map::Entry, BTreeSet, HashMap, HashSet};
+use std::collections::{hash_map::Entry, HashMap, HashSet};
 
 use roslibrust_codegen::Time;
 use chrono::TimeDelta;
@@ -48,7 +48,8 @@ impl TfBuffer {
         }
     }
 
-    // TODO(lucasw) detect loops
+    // don't detect loops here on the assumption that the transforms are arriving
+    // much faster than lookup are occuring, so only detect loops in a lookup
     fn add_transform(&mut self, transform: &TransformStamped, static_tf: bool) {
         self.parent_transform_index
             .insert(transform.child_frame_id.clone(), transform.header.frame_id.clone());
@@ -74,6 +75,38 @@ impl TfBuffer {
         .add_to_buffer(transform.clone());
     }
 
+    /// traverse tf tree straight upwards until there are no more parents
+    fn get_path_to_root(
+        &self,
+        frame: String,
+    ) -> Result<(Vec<String>, HashSet::<String>), TfError>  {
+        // TODO(lucasw) use an IndexMap
+        let mut frame_lineage = Vec::new();
+        let mut frame_lineage_visited = HashSet::<String>::new();
+        frame_lineage_visited.insert(frame.clone());
+        frame_lineage.push(frame.clone());
+
+        let mut cur_frame = frame.clone();
+        // println!("get frame lineage '{frame}'");
+
+        // TODO(lucasw) could this be done in one line?
+        while self.parent_transform_index.contains_key(&cur_frame) {
+            // println!("-- {cur_frame}");
+            cur_frame = self.parent_transform_index.get(&cur_frame).unwrap().to_string();
+            // println!("  |-> {cur_frame}");
+            // detect loops
+            // TODO(lucasw) much more advanced loop detection would allow loops that don't overlap
+            // in time, but it's much easier to prohibit those (which means loops can exist
+            // that don't overlap within cache duration of each other)
+            if frame_lineage_visited.contains(&cur_frame) {
+                return Err(TfError::LoopDetected(frame, self.child_transform_index.clone()));
+            }
+            frame_lineage_visited.insert(cur_frame.clone());
+            frame_lineage.push(cur_frame.clone());
+        }
+        Ok((frame_lineage, frame_lineage_visited))
+    }
+
     /// Retrieves the transform path
     fn retrieve_transform_path(
         &self,
@@ -81,8 +114,6 @@ impl TfBuffer {
         to: String,
         // stamp: Option<Time>,
     ) -> Result<Vec<String>, TfError> {
-        let mut res = vec![];
-
         /*
         let duration = match stamp {
             Some(stamp) => Some(stamp_to_duration(stamp.clone())),
@@ -95,61 +126,42 @@ impl TfBuffer {
         // }
         // return Err(TfError::CouldNotFindTransform(from, to, self.child_transform_index.clone()));
 
-        // Find the common parent of from and to, first get all the parents of from
-        // all the way to the root, then start getting parents of to and terminate
-        // when one is found that is in the from parents set
-
-        // TODO(lucasw) use an IndexMap
-        let mut from_lineage_visited = BTreeSet::<String>::new();
-        let mut from_lineage = Vec::new();
-        from_lineage_visited.insert(from.clone());
-        from_lineage.push(from.clone());
-
-        let mut cur_frame = from.clone();
-        // println!("get 'from' frame lineage '{from}'");
-
-        // TODO(lucasw) could this be done in one line?
-        while self.parent_transform_index.contains_key(&cur_frame) {
-            // println!("-- {cur_frame}");
-            cur_frame = self.parent_transform_index.get(&cur_frame).unwrap().to_string();
-            // println!("  |-> {cur_frame}");
-            from_lineage_visited.insert(cur_frame.clone());
-            from_lineage.push(cur_frame.clone());
-        }
+        // Find the common parent of from and to, get the path all the way to root of each
+        // then iterate through one to find find the earliest frame that is also in the other path
+        let (from_lineage, from_lineage_visited) = self.get_path_to_root(from.clone())?;
         println!("from lineage {from_lineage:?}");
-
-        let mut to_lineage_visited = BTreeSet::<String>::new();
-        let mut to_lineage = Vec::new();
-        to_lineage.push(to.clone());
-
-        // println!("get 'to' frame lineage '{to}'");
-        let mut cur_frame = to.clone();
-        while self.parent_transform_index.contains_key(&cur_frame) {
-            // println!("-- {cur_frame}");
-            cur_frame = self.parent_transform_index.get(&cur_frame).unwrap().to_string();
-            // println!("  |-> {cur_frame}");
-            to_lineage.push(cur_frame.clone());
-        }
+        let (to_lineage, _) = self.get_path_to_root(to.clone())?;
         println!("to lineage {to_lineage:?}");
 
-        let mut common_parent = None;
-        for frame in &to_lineage {
-            if from_lineage_visited.contains(frame) {
-                common_parent = Some(frame);
-                println!("common parent found: {frame}");
-                break;
+        // TODO(lucasw) could try to terminate above get_path_to_root by looking for the common frame there
+        // make it take an optional frame to stop at, if None go to root
+        let common_parent = {
+            let mut common_parent = None;
+            for frame in &to_lineage {
+                if from_lineage_visited.contains(frame) {
+                    common_parent = Some(frame);
+                    println!("common parent found: {frame}");
+                    break;
+                }
             }
-        }
 
-        if common_parent.is_none() {
-            println!("{from_lineage:?} - {to_lineage:?}");
-            return Err(TfError::CouldNotFindTransform(
-                from,
-                to,
-                self.child_transform_index.clone(),
-            ))
-        }
-        let common_parent = common_parent.unwrap();
+            if common_parent.is_none() {
+                // TODO(lucasw) could also delineate where one transform or the other isn't in the tree
+                // at all
+                println!("disconnected trees: {from_lineage:?} - {to_lineage:?}");
+                return Err(TfError::CouldNotFindTransform(
+                    from,
+                    to,
+                    self.child_transform_index.clone(),
+                ))
+            }
+            common_parent.unwrap()
+        };
+
+        // Now join the path up from 'from' and path down to 'to' together
+        // TODO(lucasw) return two separate paths so the caller can apply
+        // an inverse transform to the 'up' path instead of the stored forward transform
+        let mut res = vec![];
 
         for frame in &from_lineage {
             println!("frame in from lineage {frame}");
@@ -159,14 +171,16 @@ impl TfBuffer {
             }
         }
 
-        let mut found_common_parent = false;
-        for frame in (&to_lineage).iter().rev() {
-            println!("frame in to lineage {frame}");
-            if found_common_parent {
-                res.push(frame.clone());
-            }
-            if frame == common_parent {
-                found_common_parent = true;
+        {
+            let mut found_common_parent = false;
+            for frame in (&to_lineage).iter().rev() {
+                println!("frame in to lineage {frame}");
+                if found_common_parent {
+                    res.push(frame.clone());
+                }
+                if frame == common_parent {
+                    found_common_parent = true;
+                }
             }
         }
         println!("full path: {res:?}");
@@ -183,6 +197,9 @@ impl TfBuffer {
     ) -> Result<TransformStamped, TfError> {
         let from = from.to_string();
         let to = to.to_string();
+        if from == to {
+            panic!("TODO(lucasw) return identity transform");
+        }
 
         let stamp;
         if stamp0.is_none() {
