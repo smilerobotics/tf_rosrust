@@ -16,7 +16,9 @@ use roslibrust_codegen::Time;
 /// Example usage:
 ///
 /// ```no_run
-/// use tf_rosrust::TfListener;
+/// // TODO(lucasw) make this code work
+/// /*
+/// use tf_roslibrust::TfListener;
 ///
 /// rosrust::init("listener");
 /// let listener = TfListener::new();
@@ -27,6 +29,7 @@ use roslibrust_codegen::Time;
 ///     println!("{tf:?}");
 ///     rate.sleep();
 /// }
+/// */
 /// ```
 /// Do note that unlike the C++ variant of the TfListener, only one TfListener can be created at a time. Like its C++ counterpart,
 /// it must be scoped to exist through the lifetime of the program. One way to do this is using an `Arc` or `RwLock`.

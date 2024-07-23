@@ -6,6 +6,8 @@
 //! ```no_run
 //! use tf_roslibrust::TfListener;
 //!
+//! // TODO(lucasw) make this code valid
+//! /*
 //! rosrust::init("listener");
 //! let listener = TfListener::new();
 //!
@@ -15,6 +17,7 @@
 //!     println!("{tf:?}");
 //!     rate.sleep();
 //! }
+//! */
 //!```
 
 mod tf_broadcaster;

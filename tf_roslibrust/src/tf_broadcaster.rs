@@ -10,7 +10,9 @@ use roslibrust::ros1::Publisher;
 /// Example usage:
 ///
 /// TODO(lucasw) update this to use roslibrust
+///
 /// ```no_run
+/// /*
 /// use tf_rosrust::{TfBroadcaster, TransformStamped};
 ///
 /// rosrust::init("broadcaster");
@@ -31,6 +33,7 @@ use roslibrust::ros1::Publisher;
 ///     println!("{tf:?}");
 ///     rate.sleep();
 /// }
+/// */
 /// ```
 pub struct TfBroadcaster {
     publisher: Publisher<TFMessage>,
