@@ -68,30 +68,8 @@ async fn main() -> Result<(), anyhow::Error> {
                 println!("ctrl-c exiting");
                 break;
             }
-            // TODO(lucasw) move this into listener
-            rv = listener._dynamic_subscriber.next() => {
-                match rv {
-                    Some(Ok(tfm)) => {
-                        listener.update_tf(tfm).await;
-                    },
-                    Some(Err(error)) => {
-                        panic!("{error}");
-                    },
-                    None => (),
-                }
-            }
-            rv = listener._static_subscriber.next() => {
-                match rv {
-                    Some(Ok(tfm)) => {
-                        listener.update_tf_static(tfm).await;
-                    },
-                    Some(Err(error)) => {
-                        panic!("{error}");
-                    },
-                    None => (),
-                }
-            }
             _ = tokio::time::sleep(remaining) => {
+                println!("update");
                 next_update += update_period;
                 // println!("update {remaining:?}");
                 // let lookup_stamp = tf_util::stamp_now();
@@ -119,8 +97,34 @@ async fn main() -> Result<(), anyhow::Error> {
                 // as static or dynamic and later update don't change it.
                 // Compare to old tf_echo and tf2_tools echo.py
                 // println!("{stamp_now:?} {lookup_stamp:?} {tf:?}");
+                println!(" done");
             }
-        }
+            // TODO(lucasw) move this into listener
+            rv = listener._dynamic_subscriber.next() => {
+                print!(".");
+                match rv {
+                    Some(Ok(tfm)) => {
+                        listener.update_tf(tfm).await;
+                    },
+                    Some(Err(error)) => {
+                        panic!("{error}");
+                    },
+                    None => (),
+                }
+            }
+            rv = listener._static_subscriber.next() => {
+                print!("+");
+                match rv {
+                    Some(Ok(tfm)) => {
+                        listener.update_tf_static(tfm).await;
+                    },
+                    Some(Err(error)) => {
+                        panic!("{error}");
+                    },
+                    None => (),
+                }
+            }
+        }  // select loop
     }
 
     Ok(())
