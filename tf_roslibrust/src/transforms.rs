@@ -69,6 +69,7 @@ pub fn get_inverse(trans: &TransformStamped) -> TransformStamped {
 pub fn chain_transforms(transforms: &[TransformStamped]) -> Transform {
     let mut final_transform = Isometry3::identity();
     for t in transforms {
+        // println!("{} {} {:?}", t.header.frame_id, t.child_frame_id, t.transform);
         let tf = isometry_from_transform(&t.transform);
         final_transform *= tf;
     }

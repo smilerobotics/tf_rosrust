@@ -176,10 +176,7 @@ impl TfBuffer {
                 }
             }
         }
-        // println!("full path: {res:?}");
 
-        // TODO(lucasw) instead find the list in reverse
-        let res = res.into_iter().rev().collect();
         Ok(res)
     }
 
@@ -197,12 +194,12 @@ impl TfBuffer {
             let frame0 = path0[ind].clone();
             let frame1 = path0[ind + 1].clone();
             let node = TfGraphNode {
-                child: frame0.clone(),
-                parent: frame1.clone(),
-            };
-            let inverse_node = TfGraphNode {
                 child: frame1.clone(),
                 parent: frame0.clone(),
+            };
+            let inverse_node = TfGraphNode {
+                child: frame0.clone(),
+                parent: frame1.clone(),
             };
 
             // get inverse of inverse_node if this fails
