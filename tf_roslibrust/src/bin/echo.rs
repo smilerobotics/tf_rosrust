@@ -97,7 +97,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 // let lookup_stamp = tf_util::stamp_now();
                 // TODO(lucasw) maybe just have a lookup_transform_recent function
                 // TODO(lucasw) swapping position of frame 1 2 to match tf2_tools echo.py
-                let res = listener.lookup_transform(frame2, frame1, None);
+                let res = listener.lookup_transform(frame1, frame2, None);
                 let stamp_now = tf_util::stamp_now();
                 match res {
                     Ok(tf) => {

@@ -1,14 +1,19 @@
 use chrono::TimeDelta;
 use roslibrust_codegen::Time;
 
+pub fn to_stamp(secs: u32, nsecs: u32) -> Time {
+    roslibrust_codegen::Time {
+        secs,
+        nsecs,
+    }
+}
 pub fn stamp_now() -> roslibrust_codegen::Time {
     use std::time::SystemTime;
     let duration_since_epoch = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
-    let stamp = roslibrust_codegen::Time {
-        secs: duration_since_epoch.as_secs() as u32,
-        nsecs: (duration_since_epoch.as_nanos() % 1e9 as u128) as u32,
-    };
-    stamp
+    to_stamp(
+        duration_since_epoch.as_secs() as u32,
+        (duration_since_epoch.as_nanos() % 1e9 as u128) as u32,
+    )
 }
 
 pub fn stamp_to_duration(stamp: Time) -> TimeDelta
