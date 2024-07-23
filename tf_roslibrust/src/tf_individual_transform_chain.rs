@@ -51,20 +51,20 @@ impl TfIndividualTransformChain {
         }
     }
 
-    /// If timestamp is zero, return the latest transform.
+    /// If timestamp is None, return the latest transform.
     pub(crate) fn get_closest_transform(
         &self,
-        stamp: Time,
+        stamp: Option<Time>,
     ) -> Result<TransformStamped, TfError> {
-        let time = stamp_to_duration(stamp.clone());
-        if time.is_zero() {
+        // TODO(lucasw) or just have a get_most_recent_transform()
+        if stamp.is_none() || self.static_tf {
             println!("return latest");
+            // TODO(lucasw) don't really want to use the timestamp of this if it is static
             return Ok(self.transform_chain.last().unwrap().clone());
         }
 
-        if self.static_tf {
-            return Ok(self.transform_chain.last().unwrap().clone());
-        }
+        let stamp = stamp.unwrap();
+        let time = stamp_to_duration(stamp.clone());
 
         match binary_search_time(&self.transform_chain, time) {
             Ok(x) => return Ok(self.transform_chain.get(x).unwrap().clone()),
@@ -98,7 +98,7 @@ impl TfIndividualTransformChain {
         }
     }
 
-    pub(crate) fn has_valid_transform(&self, time: TimeDelta) -> bool {
+    pub(crate) fn has_valid_transform(&self, time: Option<TimeDelta>) -> bool {
         if self.transform_chain.is_empty() {
             return false;
         }
@@ -107,11 +107,18 @@ impl TfIndividualTransformChain {
             return true;
         }
 
-        let first = self.transform_chain.first().unwrap();
-        let last = self.transform_chain.last().unwrap();
+        match time {
+            None => {
+                return true;
+            },
+            Some(time) => {
+                let first = self.transform_chain.first().unwrap();
+                let last = self.transform_chain.last().unwrap();
 
-        let first_header_stamp = stamp_to_duration(first.header.stamp.clone());
-        let last_header_stamp = stamp_to_duration(last.header.stamp.clone());
-        time.is_zero() || (time >= first_header_stamp && time <= last_header_stamp)
+                let first_header_stamp = stamp_to_duration(first.header.stamp.clone());
+                let last_header_stamp = stamp_to_duration(last.header.stamp.clone());
+                time >= first_header_stamp && time <= last_header_stamp
+            },
+        }
     }
 }

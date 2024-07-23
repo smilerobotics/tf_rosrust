@@ -1,8 +1,11 @@
 use roslibrust_codegen::Time;
 use std::time::SystemTime;
 
-use tf_roslibrust::TfListener;
-use tf_roslibrust::tf_util;
+
+use tf_roslibrust::{
+    TfListener,
+    tf_util,
+};
 
 roslibrust_codegen_macro::find_and_generate_ros_messages!();
 
@@ -92,18 +95,21 @@ async fn main() -> Result<(), anyhow::Error> {
             _ = tokio::time::sleep(remaining) => {
                 next_update += update_period;
                 // println!("update {remaining:?}");
-                let lookup_stamp = Time {secs: 0, nsecs: 0};
                 // let lookup_stamp = tf_util::stamp_now();
-                let tf = listener.lookup_transform(frame1, frame2, lookup_stamp.clone());
-                // TODO(lucasw) header stamp is 0 when looking up most recent (with stamp 0)
+                // TODO(lucasw) maybe just have a lookup_transform_recent function
+                let res = listener.lookup_transform(frame1, frame2, None);
+                let stamp_now = tf_util::stamp_now();
+                match res {
+                    Ok(tf) => { println!("{stamp_now:?} {tf:?}"); },
+                    Err(err) => { println!("{stamp_now:?} {err:?}"); },
+                }
                 // TODO(lucasw) publishing a dynamic transform followed by a static (for
                 // the same parent and child frames) results in CouldNotFindTransform error
                 // but doing the reverse works, but then turning off the dynamic results in
                 // the lookup still working- the parent-child relationship gets latched in
                 // as static or dynamic and later update don't change it.
                 // Compare to old tf_echo and tf2_tools echo.py
-                let stamp_now = tf_util::stamp_now();
-                println!("{stamp_now:?} {lookup_stamp:?} {tf:?}");
+                // println!("{stamp_now:?} {lookup_stamp:?} {tf:?}");
             }
         }
     }

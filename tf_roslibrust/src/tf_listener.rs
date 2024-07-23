@@ -81,7 +81,7 @@ impl TfListener {
         &self,
         from: &str,
         to: &str,
-        time: Time,
+        time: Option<Time>,
     ) -> Result<TransformStamped, TfError> {
         self.buffer.read().unwrap().lookup_transform(from, to, time)
     }
