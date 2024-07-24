@@ -50,11 +50,11 @@ impl TfBuffer {
 
     // don't detect loops here on the assumption that the transforms are arriving
     // much faster than lookup are occuring, so only detect loops in a lookup
-    fn add_transform(&mut self, transform: &TransformStamped, static_tf: bool) {
+    fn add_transform(&mut self, transform: &TransformStamped, is_static_tf: bool) {
+        // TODO(lucasw) need to retire transforms from this index when they expire
         self.parent_transform_index
             .insert(transform.child_frame_id.clone(), transform.header.frame_id.clone());
 
-        //TODO: Detect is new transform will create a loop
         self.child_transform_index
             .entry(transform.header.frame_id.clone())
             .or_default()
@@ -68,7 +68,7 @@ impl TfBuffer {
         match self.transform_data.entry(key) {
             Entry::Occupied(e) => e.into_mut(),
             Entry::Vacant(e) => e.insert(TfIndividualTransformChain::new(
-                static_tf,
+                is_static_tf,
                 self.cache_duration,
             )),
         }

@@ -1,15 +1,12 @@
 use chrono::TimeDelta;
 use roslibrust_codegen::Time;
+use std::collections::BTreeMap;
 
 use crate::{
     tf_error::TfError,
     tf_util::stamp_to_duration,
     transforms::{geometry_msgs::TransformStamped, interpolate, to_transform_stamped},
 };
-
-fn binary_search_time(chain: &[TransformStamped], time: TimeDelta) -> Result<usize, usize> {
-    chain.binary_search_by(|element| stamp_to_duration(element.header.stamp.clone()).cmp(&time))
-}
 
 #[derive(Clone, Debug)]
 pub(crate) struct TfIndividualTransformChain {
@@ -19,7 +16,7 @@ pub(crate) struct TfIndividualTransformChain {
     cache_duration: TimeDelta,
     static_tf: bool,
     // TODO: Implement a circular buffer. Current method is slow.
-    pub(crate) transform_chain: Vec<TransformStamped>,
+    pub(crate) transform_chain: BTreeMap<TimeDelta, TransformStamped>,
 }
 
 impl TfIndividualTransformChain {
@@ -27,35 +24,45 @@ impl TfIndividualTransformChain {
         // TODO(lucasw) have an enum type for static and non-static?
         Self {
             cache_duration,
-            transform_chain: Vec::new(),
+            transform_chain: BTreeMap::new(),
             static_tf,
         }
     }
 
     fn newest_stamp(&self) -> Option<TimeDelta> {
-        self.transform_chain.last().map(|x| stamp_to_duration(x.header.stamp.clone()))
+        let key_value = self.transform_chain.last_key_value();
+        match key_value {
+            Some(key_value) => {
+                let (key, _) = key_value;
+                Some(key.clone())
+            },
+            None => None,
+        }
     }
 
+    // TODO(lucasw) pass in a TimeDelta which is latest - cache_duration across entire tf buffer
+    // then won't have old transforms linger
     pub(crate) fn add_to_buffer(&mut self, msg: TransformStamped) {
         if self.static_tf {
             let mut tfs = msg.clone();
             // TODO(lucasw) tried to get rid of the magic 0, 0 static value but here it is again
             tfs.header.stamp.secs = 0;
             tfs.header.stamp.nsecs = 0;
-            self.transform_chain.resize(1, tfs);
+            self.transform_chain.insert(stamp_to_duration(tfs.header.stamp), tfs);
+            // TODO(lucasw) is there any way for other keys to get into this map, and need to clear
+            // them out?
             return;
         }
-        let index = binary_search_time(&self.transform_chain, stamp_to_duration(msg.header.stamp.clone()))
-            .unwrap_or_else(|index| index);
-        self.transform_chain.insert(index, msg);
 
-        if let Some(newest_stamp) = self.newest_stamp() {
-            if newest_stamp > self.cache_duration {
-                let time_to_keep = newest_stamp - self.cache_duration;
-                let index =
-                    binary_search_time(&self.transform_chain, time_to_keep).unwrap_or_else(|x| x);
-                self.transform_chain.drain(..index);
-            }
+        // insert the new new transform then check if first value is too old
+        let latest_time = stamp_to_duration(msg.header.stamp);
+        self.transform_chain.insert(latest_time, msg);
+
+        // could do a while loop but should be a huge problem if too old values linger
+        let (oldest_time, _) = self.transform_chain.first_key_value().unwrap();
+        if (latest_time - *oldest_time) > self.cache_duration {
+            // _ = self.transform_chain.remove(oldest_time);
+            _ = self.transform_chain.pop_first();
         }
     }
 
@@ -68,45 +75,89 @@ impl TfIndividualTransformChain {
         if stamp.is_none() || self.static_tf {
             // println!("return latest");
             // TODO(lucasw) don't really want to use the timestamp of this if it is static
-            return Ok(self.transform_chain.last().unwrap().clone());
+            let key_value = self.transform_chain.first_key_value();
+            match key_value {
+                Some ((time, tf)) => {
+                    return Ok(*tf);
+                },
+                // TODO(lucasw) probably this isn't possible, the check is already done?
+                // None => return Err(TfError::CouldNotFindTransform()),
+                None => { panic!("couldn't get static transform"); }
+            }
         }
 
         let stamp = stamp.unwrap();
         let time = stamp_to_duration(stamp.clone());
 
-        match binary_search_time(&self.transform_chain, time) {
-            Ok(x) => return Ok(self.transform_chain.get(x).unwrap().clone()),
-            Err(x) => {
-                if x == 0 {
-                    return Err(TfError::AttemptedLookupInPast(
-                        stamp,
-                        Box::new(self.transform_chain.first().unwrap().clone()),
-                    ));
-                }
-                if x >= self.transform_chain.len() {
-                    return Err(TfError::AttemptedLookUpInFuture(
-                        Box::new(self.transform_chain.last().unwrap().clone()),
-                        stamp,
-                    ));
-                }
-                let tf1 = self.transform_chain.get(x - 1).unwrap().clone().transform;
-                let tf2 = self.transform_chain.get(x).unwrap().clone().transform;
-                let time1 = stamp_to_duration(self.transform_chain.get(x - 1).unwrap().header.stamp.clone());
-                let time2 = stamp_to_duration(self.transform_chain.get(x).unwrap().header.stamp.clone());
-                let header = self.transform_chain.get(x).unwrap().header.clone();
-                let child_frame = self.transform_chain.get(x).unwrap().child_frame_id.clone();
-                // interpolate between the timestamps that bracket the desired time
-                let total_duration = (time2 - time1).num_milliseconds() as f64;
-                let desired_duration = (time - time1).num_milliseconds() as f64;
-                let weight = 1.0 - desired_duration / total_duration;
-                let final_tf = interpolate(tf1, tf2, weight);
-                let ros_msg = to_transform_stamped(final_tf, header.frame_id, child_frame, stamp);
-                Ok(ros_msg)
-            }
+        // the bound here result in not returning a two transforms if the key
+        // is equal to the earliest time in the chain, but since it is on the verge
+        // of getting removed that isn't bad.
+
+        // This is unstable
+
+        let header;
+        let child_frame_id;
+        let (time1, tf1);
+
+        /*
+        let cursor = self.transform_chain.upper_bound(std::ops::Bound::Included(&time));
+        match cursor.peek_prev() {
+            Some((time, tf)) => {
+                time1 = time;
+                tf1 = tf.transform;
+                header = tf.header;
+                child_frame_id = tf.child_frame_id;
+            },
+            None => {
+                return Err(TfError::AttemptedLookupInPast(
+                    stamp,
+                    Box::new(self.transform_chain.first_key_value().unwrap().1.clone()),
+                ));
+            },
         }
+
+        let (time2, tf2);
+        match cursor.peek_next() {
+            Some((time, tf)) => {
+                time2 = time;
+                tf2 = tf.transform;
+            },
+            None => {
+                return Err(TfError::AttemptedLookUpInFuture(
+                    Box::new(self.transform_chain.last_key_value().unwrap().1.clone()),
+                    stamp,
+                ));
+            },
+        }
+        */
+        {
+            let keys = self.transform_chain.keys().copied().collect();
+            if time <= keys[0] {
+                return Err(TfError::AttemptedLookupInPast(
+                    stamp,
+                    Box::new(self.transform_chain.first_key_value().unwrap().1.clone()),
+                ));
+            } else if time > keys.last()] {
+                return Err(TfError::AttemptedLookUpInFuture(
+                    Box::new(self.transform_chain.last_key_value().unwrap().1.clone()),
+                    stamp,
+                ));
+            }
+
+            let ind = keys.partition_point(|&x| x < time);
+        }
+
+        // interpolate between the timestamps that bracket the desired time
+        let total_duration = (*time2 - *time1).num_milliseconds() as f64;
+        let desired_duration = (time - *time1).num_milliseconds() as f64;
+        let weight = 1.0 - desired_duration / total_duration;
+        let final_tf = interpolate(tf1, tf2, weight);
+        let ros_msg = to_transform_stamped(final_tf, header.frame_id, child_frame_id, stamp);
+        Ok(ros_msg)
     }
 
     // TODO(lucasw) not currently using this
+    /*
     pub(crate) fn has_valid_transform(&self, time: Option<TimeDelta>) -> bool {
         if self.transform_chain.is_empty() {
             return false;
@@ -130,4 +181,5 @@ impl TfIndividualTransformChain {
             },
         }
     }
+    */
 }
