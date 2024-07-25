@@ -15,15 +15,20 @@ pub fn duration_now() -> TimeDelta {
     TimeDelta::new(elapsed.as_secs() as i64, elapsed.subsec_nanos() as u32).unwrap()
 }
 
-pub fn stamp_now() -> roslibrust_codegen::Time {
-    let duration_since_epoch = duration_now();
+pub fn duration_to_stamp(time: TimeDelta) -> Time
+{
     to_stamp(
-        duration_since_epoch.num_seconds() as u32,
-        duration_since_epoch.subsec_nanos() as u32,
+        time.num_seconds() as u32,
+        time.subsec_nanos() as u32,
     )
 }
 
-pub fn stamp_to_duration(stamp: Time) -> TimeDelta
+pub fn stamp_now() -> roslibrust_codegen::Time {
+    duration_to_stamp(duration_now())
+}
+
+
+pub fn stamp_to_duration(stamp: &Time) -> TimeDelta
 {
     TimeDelta::new(stamp.secs.into(), stamp.nsecs).unwrap()
 }

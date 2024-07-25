@@ -258,7 +258,7 @@ impl TfBuffer {
                     let min_time = {
                         let mut min_time = None;
                         for tf in tf_list {
-                            let tf_time = stamp_to_duration(tf.header.stamp.clone());
+                            let tf_time = stamp_to_duration(&tf.header.stamp);
                             // println!("{0} tf time {tf_time:?}", tf.child_frame_id);
 
                             // TODO(lucasw) wouldn't need this is_zero if the tf list contents
@@ -708,7 +708,7 @@ mod test {
         assert!(data.is_some());
         assert_eq!(data.unwrap().transform_chain.len(), 1);
         assert_eq!(
-            data.unwrap().transform_chain[0].header.stamp,
+            data.unwrap().transform_chain.first_key_value().unwrap().1.header.stamp,
             to_stamp(1, 0),
         );
 
@@ -720,11 +720,12 @@ mod test {
         assert!(data.is_some());
         assert_eq!(data.unwrap().transform_chain.len(), 2);
         assert_eq!(
-            data.unwrap().transform_chain[0].header.stamp,
+            data.unwrap().transform_chain.first_key_value().unwrap().1.header.stamp,
             to_stamp(1, 0),
         );
+        let keys: Vec<TimeDelta> = data.unwrap().transform_chain.keys().copied().collect();
         assert_eq!(
-            data.unwrap().transform_chain[1].header.stamp,
+            data.unwrap().transform_chain[&keys[1]].header.stamp,
             to_stamp(2, 0),
         );
 
@@ -736,11 +737,12 @@ mod test {
         assert!(data.is_some());
         assert_eq!(data.unwrap().transform_chain.len(), 2);
         assert_eq!(
-            data.unwrap().transform_chain[0].header.stamp,
+            data.unwrap().transform_chain.first_key_value().unwrap().1.header.stamp,
             to_stamp(2, 0),
         );
+        let keys: Vec<TimeDelta> = data.unwrap().transform_chain.keys().copied().collect();
         assert_eq!(
-            data.unwrap().transform_chain[1].header.stamp,
+            data.unwrap().transform_chain[&keys[1]].header.stamp,
             to_stamp(3, 0),
         );
     }
@@ -861,7 +863,7 @@ mod test {
         };
         tf_buffer.add_transform(&camera1_to_marker, false);
 
-        camera1_to_marker.header.stamp.secs += 10;
+        camera1_to_marker.header.stamp.secs = 30;
         camera1_to_marker.header.seq += 1;
         camera1_to_marker.transform.translation.y = -1.0;
         tf_buffer.add_transform(&camera1_to_marker, false);
@@ -882,21 +884,24 @@ mod test {
                 },
                 translation: Vector3 {
                     x: 1.0,
-                    y: 1.0,
+                    y: 10.0,
                     z: 0.0,
                 },
             },
         };
         tf_buffer.add_transform(&camera2_to_marker, false);
 
-        camera2_to_marker.header.stamp.secs += 10;
+        camera2_to_marker.header.stamp.secs = 40;
         camera2_to_marker.header.seq += 1;
-        camera2_to_marker.transform.translation.y = -1.0;
+        camera2_to_marker.transform.translation.y = -10.0;
         tf_buffer.add_transform(&camera2_to_marker, false);
 
-        let result =
-            tf_buffer.lookup_transform("base", "target", Some(Time { secs: 37, nsecs: 0 }));
-        assert!((result.unwrap().transform.translation.y - -0.4).abs() < 0.01);
+        // TODO(lucasw) there is a rotation here that flips the y direction
+        let tf = tf_buffer.lookup_transform("base", "target", Some(Time { secs: 37, nsecs: 0 })).unwrap();
+        assert!((tf.transform.translation.y - 4.0).abs() < 0.01);
+        let tf = tf_buffer.lookup_transform("camera2", "marker", Some(Time { secs: 37, nsecs: 0 })).unwrap();
+        // println!("{:?}", tf);
+        assert!((tf.transform.translation.y - -4.0).abs() < 0.01);
 
         // TODO(lucasw) update these lookups to be valid
         /*

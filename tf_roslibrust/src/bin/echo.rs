@@ -106,7 +106,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 print!(".");
                 match rv {
                     Some(Ok(tfm)) => {
-                        listener.update_tf(tfm).await;
+                        listener.update_tf(tfm);
                     },
                     Some(Err(error)) => {
                         panic!("{error}");
@@ -118,7 +118,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 print!("+");
                 match rv {
                     Some(Ok(tfm)) => {
-                        listener.update_tf_static(tfm).await;
+                        listener.update_tf_static(tfm);
                     },
                     Some(Err(error)) => {
                         panic!("{error}");

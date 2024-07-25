@@ -76,6 +76,7 @@ pub fn chain_transforms(transforms: &[TransformStamped]) -> Transform {
     isometry_to_transform(final_transform)
 }
 
+/// 1.0 is all t1, and 0.0 is all t2
 pub fn interpolate(t1: Transform, t2: Transform, weight: f64) -> Transform {
     let r1 = nalgebra::geometry::Quaternion::new(
         t1.rotation.w,
