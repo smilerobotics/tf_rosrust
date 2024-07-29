@@ -244,7 +244,17 @@ impl TfBuffer {
         stamp0: Option<Time>,
     ) -> Result<TransformStamped, TfError> {
         if from == to {
-            panic!("TODO(lucasw) return identity transform");
+            // TODO(lucasw) use default syntax
+            let mut tfs = TransformStamped::default();
+            tfs.header.frame_id = from.to_string();
+            tfs.child_frame_id = to.to_string();
+            match stamp0 {
+                Some(stamp) => { tfs.header.stamp = stamp; },
+                // TODO(lucasw) is time zero correct?
+                None => { tfs.header.stamp = to_stamp(0, 0); }
+            }
+            tfs.transform.rotation.w = 1.0;
+            return Ok(tfs);
         }
 
         let stamp = {
