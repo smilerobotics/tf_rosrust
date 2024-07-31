@@ -1,5 +1,3 @@
-use std::sync::{Arc, RwLock};
-
 use crate::{
     tf_buffer::TfBuffer,
     tf_error::TfError,
@@ -31,13 +29,10 @@ use roslibrust_codegen::Time;
 /// }
 /// */
 /// ```
-/// Do note that unlike the C++ variant of the TfListener, only one TfListener can be created at a time. Like its C++ counterpart,
-/// it must be scoped to exist through the lifetime of the program. One way to do this is using an `Arc` or `RwLock`.
 pub struct TfListener {
-    // buffer: Arc<RwLock<TfBuffer>>,
     buffer: TfBuffer,
-    pub _static_subscriber: Subscriber<TFMessage>,
-    pub _dynamic_subscriber: Subscriber<TFMessage>,
+    _static_subscriber: Subscriber<TFMessage>,
+    _dynamic_subscriber: Subscriber<TFMessage>,
 }
 
 impl TfListener {
@@ -49,7 +44,6 @@ impl TfListener {
     pub async fn new_with_buffer(nh: &NodeHandle, tf_buffer: TfBuffer) -> Self {
         // let buff = RwLock::new(tf_buffer);
         let buffer = tf_buffer;
-        // let arc = Arc::new(buff);
 
         let _dynamic_subscriber = nh.subscribe::<TFMessage>("/tf", 100).await.unwrap();
         let _static_subscriber = nh.subscribe::<TFMessage>("/tf_static", 100).await.unwrap();
@@ -62,14 +56,43 @@ impl TfListener {
         }
     }
 
-    pub fn update_tf(&mut self, tfm: TFMessage) {
+    pub async fn update(&mut self) {
+        tokio::select! {
+            rv = self._dynamic_subscriber.next() => {
+                print!(".");
+                match rv {
+                    Some(Ok(tfm)) => {
+                        self.update_tf(tfm);
+                    },
+                    Some(Err(error)) => {
+                        panic!("{error}");
+                    },
+                    None => (),
+                }
+            },
+            rv = self._static_subscriber.next() => {
+                print!("+");
+                match rv {
+                    Some(Ok(tfm)) => {
+                        self.update_tf_static(tfm);
+                    },
+                    Some(Err(error)) => {
+                        panic!("{error}");
+                    },
+                    None => (),
+                }
+            },
+        }
+    }
+
+    fn update_tf(&mut self, tfm: TFMessage) {
         // println!("{tfm:?}");
         // let r1 = self.buffer.clone();
         // r1.write().unwrap().handle_incoming_transforms(tfm, false);
         self.buffer.handle_incoming_transforms(tfm, false);
     }
 
-    pub fn update_tf_static(&mut self, tfm: TFMessage) {
+    fn update_tf_static(&mut self, tfm: TFMessage) {
         // println!("static {tfm:?}");
         // let r1 = self.buffer.clone();
         // r1.write().unwrap().handle_incoming_transforms(tfm, true);
@@ -104,11 +127,3 @@ impl TfListener {
             .lookup_transform_with_time_travel(from, time1, to, time2, fixed_frame)
     }
 }
-
-/*
-impl Default for TfListener {
-    fn default(nh: &NodeHandle) -> Self {
-        TfListener::new(nh)
-    }
-}
-*/

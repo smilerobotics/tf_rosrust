@@ -83,33 +83,8 @@ async fn main() -> Result<(), anyhow::Error> {
                 // as static or dynamic and later update don't change it.
                 // Compare to old tf_echo and tf2_tools echo.py
                 // println!("{stamp_now:?} {lookup_stamp:?} {tf:?}");
-                println!(" done");
             },
-            // TODO(lucasw) move this into listener
-            rv = listener._dynamic_subscriber.next() => {
-                print!(".");
-                match rv {
-                    Some(Ok(tfm)) => {
-                        listener.update_tf(tfm);
-                    },
-                    Some(Err(error)) => {
-                        panic!("{error}");
-                    },
-                    None => (),
-                }
-            },
-            rv = listener._static_subscriber.next() => {
-                print!("+");
-                match rv {
-                    Some(Ok(tfm)) => {
-                        listener.update_tf_static(tfm);
-                    },
-                    Some(Err(error)) => {
-                        panic!("{error}");
-                    },
-                    None => (),
-                }
-            },
+            _ = listener.update() => {},
         }  // select loop
     }
 
