@@ -24,24 +24,24 @@ thiserror.workspace = true
 tokio = "1.38.0"
 
 [dependencies.roslibrust]
-git = "https://github.com/Carter12s/roslibrust.git"
-branch = "master"
-# version="0.10.1"
+# git = "https://github.com/Carter12s/roslibrust.git"
+# branch = "master"
+version = "0.10.2"
 # rev = "a1eb5a875906a26aa172a7465dd018858d191665"
 # branch = "time_ops"
 features = ["ros1"]
 
 [dependencies.roslibrust_codegen]
-git = "https://github.com/Carter12s/roslibrust.git"
-branch = "master"
-# version="0.10.1"
+# git = "https://github.com/Carter12s/roslibrust.git"
+# branch = "master"
+version = "0.10"
 # rev = "a1eb5a875906a26aa172a7465dd018858d191665"
 # branch = "time_ops"
 
 [dependencies.roslibrust_codegen_macro]
-git = "https://github.com/Carter12s/roslibrust.git"
-branch = "master"
-# version="0.10.1"
+# git = "https://github.com/Carter12s/roslibrust.git"
+# branch = "master"
+version = "0.10"
 # git = "https://github.com/lucasw/roslibrust.git"
 # rev = "a1eb5a875906a26aa172a7465dd018858d191665"
 # branch = "time_ops"
