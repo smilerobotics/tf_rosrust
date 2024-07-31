@@ -44,32 +44,16 @@ async fn main() -> Result<(), anyhow::Error> {
     let mut listener = TfListener::new(&nh).await;
     // let mut dynamic_subscriber = nh.subscribe::<tf2_msgs::TFMessage>("/tf", 100).await.unwrap();
 
-    let update_period = tokio::time::Duration::from_millis(1000);
-    let mut next_update = SystemTime::now();
+    let mut update_interval = tokio::time::interval(tokio::time::Duration::from_millis(1000));
 
     // println!("tf loop");
     loop {
-        // sleep for remaining if nothing else interrupt select, or sleep for 0 seconds
-        // if already past scheduled update
-        let remaining = {
-            let time_now = SystemTime::now();
-            let remaining;
-            if time_now > next_update {
-                remaining = tokio::time::Duration::from_secs(0);
-            } else {
-                remaining = next_update.duration_since(time_now).unwrap();
-            }
-            remaining
-        };
-
         tokio::select! {
             _ = tokio::signal::ctrl_c() => {
                 println!("ctrl-c exiting");
                 break;
-            }
-            _ = tokio::time::sleep(remaining) => {
-                println!("update");
-                next_update += update_period;
+            },
+            _ = update_interval.tick() => {
                 // println!("update {remaining:?}");
                 // let lookup_stamp = tf_util::stamp_now();
                 // TODO(lucasw) maybe just have a lookup_transform_recent function
@@ -100,7 +84,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 // Compare to old tf_echo and tf2_tools echo.py
                 // println!("{stamp_now:?} {lookup_stamp:?} {tf:?}");
                 println!(" done");
-            }
+            },
             // TODO(lucasw) move this into listener
             rv = listener._dynamic_subscriber.next() => {
                 print!(".");
@@ -113,7 +97,7 @@ async fn main() -> Result<(), anyhow::Error> {
                     },
                     None => (),
                 }
-            }
+            },
             rv = listener._static_subscriber.next() => {
                 print!("+");
                 match rv {
@@ -125,7 +109,7 @@ async fn main() -> Result<(), anyhow::Error> {
                     },
                     None => (),
                 }
-            }
+            },
         }  // select loop
     }
 
