@@ -1,9 +1,6 @@
 use std::time::SystemTime;
 
-use tf_roslibrust::{
-    TfListener,
-    tf_util,
-};
+use tf_roslibrust::{tf_util, TfListener};
 
 roslibrust_codegen_macro::find_and_generate_ros_messages!();
 
@@ -23,7 +20,7 @@ async fn main() -> Result<(), anyhow::Error> {
         // get namespace
         for arg in args {
             if arg.starts_with("__ns:=") {
-               ns = arg.replace("__ns:=", "");
+                ns = arg.replace("__ns:=", "");
             } else {
                 args2.push(arg);
             }
@@ -38,8 +35,8 @@ async fn main() -> Result<(), anyhow::Error> {
     // println!("{}", format!("full ns and node name: {full_node_name}"));
 
     let nh = NodeHandle::new(&std::env::var("ROS_MASTER_URI")?, full_node_name)
-        .await.unwrap();
-
+        .await
+        .unwrap();
 
     let mut listener = TfListener::new(&nh).await;
     // let mut dynamic_subscriber = nh.subscribe::<tf2_msgs::TFMessage>("/tf", 100).await.unwrap();
@@ -85,7 +82,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 // println!("{stamp_now:?} {lookup_stamp:?} {tf:?}");
             },
             _ = listener.update() => {},
-        }  // select loop
+        } // select loop
     }
 
     Ok(())

@@ -1,7 +1,7 @@
 use std::collections::{hash_map::Entry, HashMap, HashSet};
 
-use roslibrust_codegen::Time;
 use chrono::TimeDelta;
+use roslibrust_codegen::Time;
 
 use crate::{
     tf_error::TfError,
@@ -9,12 +9,8 @@ use crate::{
     tf_individual_transform_chain::TfIndividualTransformChain,
     tf_util::{stamp_to_duration, to_stamp},
     transforms::{
-        chain_transforms,
-        geometry_msgs::TransformStamped,
-        get_inverse,
-        std_msgs::Header,
-        tf2_msgs::TFMessage,
-        to_transform_stamped,
+        chain_transforms, geometry_msgs::TransformStamped, get_inverse, std_msgs::Header,
+        tf2_msgs::TFMessage, to_transform_stamped,
     },
 };
 
@@ -52,8 +48,10 @@ impl TfBuffer {
     // much faster than lookup are occuring, so only detect loops in a lookup
     fn add_transform(&mut self, transform: &TransformStamped, is_static_tf: bool) {
         // TODO(lucasw) need to retire transforms from this index when they expire
-        self.parent_transform_index
-            .insert(transform.child_frame_id.clone(), transform.header.frame_id.clone());
+        self.parent_transform_index.insert(
+            transform.child_frame_id.clone(),
+            transform.header.frame_id.clone(),
+        );
 
         self.child_transform_index
             .entry(transform.header.frame_id.clone())
@@ -76,10 +74,7 @@ impl TfBuffer {
     }
 
     /// traverse tf tree straight upwards until there are no more parents
-    fn get_path_to_root(
-        &self,
-        frame: &str,
-    ) -> Result<(Vec<String>, HashSet::<String>), TfError>  {
+    fn get_path_to_root(&self, frame: &str) -> Result<(Vec<String>, HashSet<String>), TfError> {
         let frame = frame.to_string();
         // TODO(lucasw) use an IndexMap
         let mut frame_lineage = Vec::new();
@@ -93,14 +88,21 @@ impl TfBuffer {
         // TODO(lucasw) could this be done in one line?
         while self.parent_transform_index.contains_key(&cur_frame) {
             // println!("-- {cur_frame}");
-            cur_frame = self.parent_transform_index.get(&cur_frame).unwrap().to_string();
+            cur_frame = self
+                .parent_transform_index
+                .get(&cur_frame)
+                .unwrap()
+                .to_string();
             // println!("  |-> {cur_frame}");
             // detect loops
             // TODO(lucasw) much more advanced loop detection would allow loops that don't overlap
             // in time, but it's much easier to prohibit those (which means loops can exist
             // that don't overlap within cache duration of each other)
             if frame_lineage_visited.contains(&cur_frame) {
-                return Err(TfError::LoopDetected(frame.to_string(), self.child_transform_index.clone()));
+                return Err(TfError::LoopDetected(
+                    frame.to_string(),
+                    self.child_transform_index.clone(),
+                ));
             }
             frame_lineage_visited.insert(cur_frame.clone());
             frame_lineage.push(cur_frame.clone());
@@ -109,11 +111,7 @@ impl TfBuffer {
     }
 
     /// Retrieves the transform path
-    fn retrieve_transform_path(
-        &self,
-        from: &str,
-        to: &str,
-    ) -> Result<Vec<String>, TfError> {
+    fn retrieve_transform_path(&self, from: &str, to: &str) -> Result<Vec<String>, TfError> {
         // for (key, value) in &self.parent_transform_index {
         //     println!("{key}: {value}");
         // }
@@ -146,7 +144,7 @@ impl TfBuffer {
                     from.to_string(),
                     to.to_string(),
                     self.child_transform_index.clone(),
-                ))
+                ));
             }
             common_parent.unwrap()
         };
@@ -212,9 +210,10 @@ impl TfBuffer {
                     Some(time_cache) => time_cache,
                     None => {
                         invert_transform = true;
-                        self.transform_data.get(&inverse_node)
+                        self.transform_data
+                            .get(&inverse_node)
                             .unwrap_or_else(|| panic!("{inverse_node:?}"))
-                    },
+                    }
                 }
             };
 
@@ -249,9 +248,13 @@ impl TfBuffer {
             tfs.header.frame_id = from.to_string();
             tfs.child_frame_id = to.to_string();
             match stamp0 {
-                Some(stamp) => { tfs.header.stamp = stamp; },
+                Some(stamp) => {
+                    tfs.header.stamp = stamp;
+                }
                 // TODO(lucasw) is time zero correct?
-                None => { tfs.header.stamp = to_stamp(0, 0); }
+                None => {
+                    tfs.header.stamp = to_stamp(0, 0);
+                }
             }
             tfs.transform.rotation.w = 1.0;
             return Ok(tfs);
@@ -259,7 +262,7 @@ impl TfBuffer {
 
         let stamp = {
             match stamp0 {
-                Some(stamp) => { Some(stamp) },
+                Some(stamp) => Some(stamp),
                 None => {
                     // println!("getting most recent transform");
                     let tf_list = self.get_tf_list(from, to, stamp0)?;
@@ -298,10 +301,10 @@ impl TfBuffer {
                             );
                             // println!("most recent stamp {stamp:?} {min_time:?}");
                             Some(stamp)
-                        },
+                        }
                         None => None,
                     }
-                }  // get most recent stamp
+                } // get most recent stamp
             }
         };
 
@@ -718,7 +721,13 @@ mod test {
         assert!(data.is_some());
         assert_eq!(data.unwrap().transform_chain.len(), 1);
         assert_eq!(
-            data.unwrap().transform_chain.first_key_value().unwrap().1.header.stamp,
+            data.unwrap()
+                .transform_chain
+                .first_key_value()
+                .unwrap()
+                .1
+                .header
+                .stamp,
             to_stamp(1, 0),
         );
 
@@ -730,7 +739,13 @@ mod test {
         assert!(data.is_some());
         assert_eq!(data.unwrap().transform_chain.len(), 2);
         assert_eq!(
-            data.unwrap().transform_chain.first_key_value().unwrap().1.header.stamp,
+            data.unwrap()
+                .transform_chain
+                .first_key_value()
+                .unwrap()
+                .1
+                .header
+                .stamp,
             to_stamp(1, 0),
         );
         let keys: Vec<TimeDelta> = data.unwrap().transform_chain.keys().copied().collect();
@@ -747,7 +762,13 @@ mod test {
         assert!(data.is_some());
         assert_eq!(data.unwrap().transform_chain.len(), 2);
         assert_eq!(
-            data.unwrap().transform_chain.first_key_value().unwrap().1.header.stamp,
+            data.unwrap()
+                .transform_chain
+                .first_key_value()
+                .unwrap()
+                .1
+                .header
+                .stamp,
             to_stamp(2, 0),
         );
         let keys: Vec<TimeDelta> = data.unwrap().transform_chain.keys().copied().collect();
@@ -907,9 +928,13 @@ mod test {
         tf_buffer.add_transform(&camera2_to_marker, false);
 
         // TODO(lucasw) there is a rotation here that flips the y direction
-        let tf = tf_buffer.lookup_transform("base", "target", Some(Time { secs: 37, nsecs: 0 })).unwrap();
+        let tf = tf_buffer
+            .lookup_transform("base", "target", Some(Time { secs: 37, nsecs: 0 }))
+            .unwrap();
         assert!((tf.transform.translation.y - 4.0).abs() < 0.01);
-        let tf = tf_buffer.lookup_transform("camera2", "marker", Some(Time { secs: 37, nsecs: 0 })).unwrap();
+        let tf = tf_buffer
+            .lookup_transform("camera2", "marker", Some(Time { secs: 37, nsecs: 0 }))
+            .unwrap();
         // println!("{:?}", tf);
         assert!((tf.transform.translation.y - -4.0).abs() < 0.01);
 

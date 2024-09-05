@@ -35,7 +35,7 @@ impl TfIndividualTransformChain {
             Some(key_value) => {
                 let (key, _) = key_value;
                 Some(key.clone())
-            },
+            }
             None => None,
         }
     }
@@ -80,12 +80,14 @@ impl TfIndividualTransformChain {
             // TODO(lucasw) don't really want to use the timestamp of this if it is static
             let key_value = self.transform_chain.last_key_value();
             match key_value {
-                Some ((_, tf)) => {
+                Some((_, tf)) => {
                     return Ok(tf.clone());
-                },
+                }
                 // TODO(lucasw) probably this isn't possible, the check is already done?
                 // None => return Err(TfError::CouldNotFindTransform()),
-                None => { panic!("couldn't get static transform"); }
+                None => {
+                    panic!("couldn't get static transform");
+                }
             }
         }
 
@@ -139,9 +141,13 @@ impl TfIndividualTransformChain {
             let last_key = *keys.last().unwrap();
             // println!("{first_key} {last_key} spans {:.3}s", duration_to_f64(last_key - first_key));
             if time < first_key {
-                println!("diff {:.3}, first key {:.3}, lookup {:.3}, num {}", duration_to_f64(keys[0] - time),
+                println!(
+                    "diff {:.3}, first key {:.3}, lookup {:.3}, num {}",
+                    duration_to_f64(keys[0] - time),
                     duration_to_f64(keys[0]),
-                    duration_to_f64(time), keys.len());
+                    duration_to_f64(time),
+                    keys.len()
+                );
                 return Err(TfError::AttemptedLookupInPast(
                     stamp,
                     Box::new(self.transform_chain.first_key_value().unwrap().1.clone()),

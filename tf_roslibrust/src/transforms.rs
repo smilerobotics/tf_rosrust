@@ -6,7 +6,6 @@ roslibrust_codegen_macro::find_and_generate_ros_messages!();
 use geometry_msgs::{Pose, Quaternion, Transform, TransformStamped, Vector3};
 use std_msgs::Header;
 
-
 pub fn isometry_from_pose(pose: &Pose) -> Isometry3<f64> {
     let trans = Translation3::new(pose.position.x, pose.position.y, pose.position.z);
     let rot = UnitQuaternion::new_normalize(nalgebra::geometry::Quaternion::new(

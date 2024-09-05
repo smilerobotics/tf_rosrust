@@ -8,7 +8,6 @@ use roslibrust::ros1::NodeHandle;
 use roslibrust::ros1::Subscriber;
 use roslibrust_codegen::Time;
 
-
 ///This struct tries to be the same as the C++ version of `TransformListener`. Use this struct to lookup transforms.
 ///
 /// Example usage:
