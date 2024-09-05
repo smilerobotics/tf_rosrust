@@ -164,7 +164,7 @@ impl TfBuffer {
 
         {
             let mut found_common_parent = false;
-            for frame in (&to_lineage).iter().rev() {
+            for frame in (to_lineage).iter().rev() {
                 // println!("frame in 'to' lineage {frame}");
                 if found_common_parent {
                     res.push(frame.clone());

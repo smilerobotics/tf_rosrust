@@ -34,7 +34,7 @@ impl TfIndividualTransformChain {
         match key_value {
             Some(key_value) => {
                 let (key, _) = key_value;
-                Some(key.clone())
+                Some(*key)
             }
             None => None,
         }
@@ -71,7 +71,7 @@ impl TfIndividualTransformChain {
         &self,
         stamp: Option<Time>,
     ) -> Result<TransformStamped, TfError> {
-        if self.transform_chain.len() == 0 {
+        if self.transform_chain.is_empty() {
             panic!("no transforms available");
         }
         // TODO(lucasw) or just have a get_most_recent_transform()

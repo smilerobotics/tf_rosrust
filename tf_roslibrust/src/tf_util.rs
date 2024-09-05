@@ -11,7 +11,7 @@ pub fn duration_now() -> TimeDelta {
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap();
     // println!("{} {}", elapsed.as_secs(), elapsed.subsec_nanos());
-    TimeDelta::new(elapsed.as_secs() as i64, elapsed.subsec_nanos() as u32).unwrap()
+    TimeDelta::new(elapsed.as_secs() as i64, elapsed.subsec_nanos()).unwrap()
 }
 
 pub fn duration_to_stamp(time: TimeDelta) -> Time {
