@@ -5,8 +5,8 @@ use crate::{
 };
 
 use roslibrust::ros1::NodeHandle;
-use roslibrust::ros1::Subscriber;
 use roslibrust_codegen::Time;
+use std::sync::{mpsc, Arc, Mutex};
 
 ///This struct tries to be the same as the C++ version of `TransformListener`. Use this struct to lookup transforms.
 ///
@@ -29,73 +29,85 @@ use roslibrust_codegen::Time;
 /// */
 /// ```
 pub struct TfListener {
-    buffer: TfBuffer,
-    _static_subscriber: Subscriber<TFMessage>,
-    _dynamic_subscriber: Subscriber<TFMessage>,
+    buffer: Arc<Mutex<TfBuffer>>,
+    _buffer_handle: tokio::task::JoinHandle<()>,
+    _tf_handle: tokio::task::JoinHandle<()>,
+    _tf_static_handle: tokio::task::JoinHandle<()>,
 }
 
 impl TfListener {
     /// Create a new TfListener
     pub async fn new(nh: &NodeHandle) -> Self {
-        Self::new_with_buffer(nh, TfBuffer::new()).await
-    }
+        // TODO(lucasw) RwLock
+        let buffer = Arc::new(Mutex::new(TfBuffer::new()));
 
-    pub async fn new_with_buffer(nh: &NodeHandle, tf_buffer: TfBuffer) -> Self {
-        // let buff = RwLock::new(tf_buffer);
-        let buffer = tf_buffer;
+        let (static_tfm_sender, tfm_receiver) = mpsc::sync_channel(4000);
 
-        let _dynamic_subscriber = nh.subscribe::<TFMessage>("/tf", 100).await.unwrap();
-        let _static_subscriber = nh.subscribe::<TFMessage>("/tf_static", 100).await.unwrap();
-
-        TfListener {
-            // buffer: arc,
-            buffer,
-            _static_subscriber,
-            _dynamic_subscriber,
-        }
-    }
-
-    pub async fn update(&mut self) {
-        tokio::select! {
-            rv = self._dynamic_subscriber.next() => {
+        let dyn_tfm_sender = static_tfm_sender.clone();
+        // let dyn_nh = nh.clone();
+        let mut dynamic_subscriber = nh.subscribe::<TFMessage>("/tf", 200).await.unwrap();
+        let tf_handle = tokio::spawn(async move {
+            while let Some(rv) = dynamic_subscriber.next().await {
                 print!(".");
                 match rv {
-                    Some(Ok(tfm)) => {
-                        self.update_tf(tfm);
-                    },
-                    Some(Err(error)) => {
+                    Ok(tfm) => {
+                        let _ = dyn_tfm_sender.send((tfm, false));
+                    }
+                    Err(error) => {
                         panic!("{error}");
-                    },
-                    None => (),
+                    }
                 }
-            },
-            rv = self._static_subscriber.next() => {
-                print!("+");
+            }
+        });
+
+        let mut static_subscriber = nh.subscribe::<TFMessage>("/tf_static", 200).await.unwrap();
+        let tf_static_handle = tokio::spawn(async move {
+            while let Some(rv) = static_subscriber.next().await {
+                print!(".");
                 match rv {
-                    Some(Ok(tfm)) => {
-                        self.update_tf_static(tfm);
-                    },
-                    Some(Err(error)) => {
+                    Ok(tfm) => {
+                        let _ = static_tfm_sender.send((tfm, true));
+                    }
+                    Err(error) => {
                         panic!("{error}");
-                    },
-                    None => (),
+                    }
                 }
-            },
+            }
+        });
+
+        let buffer_for_writing = buffer.clone();
+        let buffer_handle = tokio::spawn(async move {
+            loop {
+                let rv = tfm_receiver.recv();
+                match rv {
+                    Ok((tfm, is_static)) => {
+                        // r1.write().unwrap().handle_incoming_transforms(tfm, true);
+                        buffer_for_writing
+                            .lock()
+                            .unwrap()
+                            .handle_incoming_transforms(tfm, is_static);
+                    }
+                    Err(e) => {
+                        // TODO(lucasw) the panic only shuts down this thread, not the whole
+                        // application
+                        panic!("{e:?} - did this node get killed?");
+                    }
+                }
+            }
+        });
+
+        TfListener {
+            buffer,
+            _buffer_handle: buffer_handle,
+            _tf_handle: tf_handle,
+            _tf_static_handle: tf_static_handle,
         }
     }
 
-    fn update_tf(&mut self, tfm: TFMessage) {
-        // println!("{tfm:?}");
-        // let r1 = self.buffer.clone();
-        // r1.write().unwrap().handle_incoming_transforms(tfm, false);
-        self.buffer.handle_incoming_transforms(tfm, false);
-    }
-
-    fn update_tf_static(&mut self, tfm: TFMessage) {
-        // println!("static {tfm:?}");
-        // let r1 = self.buffer.clone();
-        // r1.write().unwrap().handle_incoming_transforms(tfm, true);
-        self.buffer.handle_incoming_transforms(tfm, true);
+    pub fn is_finished(&self) -> bool {
+        self._buffer_handle.is_finished()
+            || self._tf_handle.is_finished()
+            || self._tf_static_handle.is_finished()
     }
 
     /// Looks up a transform within the tree at a given time.
@@ -106,7 +118,7 @@ impl TfListener {
         time: Option<Time>,
     ) -> Result<TransformStamped, TfError> {
         // self.buffer.read().unwrap().lookup_transform(from, to, time)
-        self.buffer.lookup_transform(from, to, time)
+        self.buffer.lock().unwrap().lookup_transform(from, to, time)
     }
 
     /// Looks up a transform within the tree at a given time for each frame with
@@ -123,6 +135,8 @@ impl TfListener {
         //    .read()
         //    .unwrap()
         self.buffer
+            .lock()
+            .unwrap()
             .lookup_transform_with_time_travel(from, time1, to, time2, fixed_frame)
     }
 }
