@@ -30,9 +30,9 @@ use std::sync::{mpsc, Arc, RwLock};
 /// ```
 pub struct TfListener {
     buffer: Arc<RwLock<TfBuffer>>,
-    _buffer_handle: tokio::task::JoinHandle<()>,
-    _tf_handle: tokio::task::JoinHandle<()>,
-    _tf_static_handle: tokio::task::JoinHandle<()>,
+    buffer_handle: tokio::task::JoinHandle<()>,
+    tf_handle: tokio::task::JoinHandle<()>,
+    tf_static_handle: tokio::task::JoinHandle<()>,
 }
 
 impl TfListener {
@@ -97,16 +97,16 @@ impl TfListener {
 
         TfListener {
             buffer,
-            _buffer_handle: buffer_handle,
-            _tf_handle: tf_handle,
-            _tf_static_handle: tf_static_handle,
+            buffer_handle,
+            tf_handle,
+            tf_static_handle,
         }
     }
 
     pub fn is_finished(&self) -> bool {
-        self._buffer_handle.is_finished()
-            || self._tf_handle.is_finished()
-            || self._tf_static_handle.is_finished()
+        self.buffer_handle.is_finished()
+            || self.tf_handle.is_finished()
+            || self.tf_static_handle.is_finished()
     }
 
     /// Looks up a transform within the tree at a given time.
