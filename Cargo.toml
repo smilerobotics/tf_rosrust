@@ -25,10 +25,3 @@ r2r = "0.9"
 rosrust = "0.9"
 thiserror = "1.0"
 tokio = "1"
-
-[workspace.lints.rust]
-# missing_debug_implementations = "warn" # TODO: Most rosrust types don't implement Debug
-# missing_docs = "warn" # TODO
-rust_2018_idioms = "warn"
-single_use_lifetimes = "warn"
-unreachable_pub = "warn"
