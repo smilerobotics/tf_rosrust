@@ -77,20 +77,40 @@ impl TfListener {
         let buffer_for_writing = buffer.clone();
         let buffer_handle = tokio::spawn(async move {
             loop {
-                let rv = tfm_receiver.recv();
-                match rv {
-                    Ok((tfm, is_static)) => {
-                        // r1.write().unwrap().handle_incoming_transforms(tfm, true);
-                        buffer_for_writing
-                            .write()
-                            .unwrap()
-                            .handle_incoming_transforms(tfm, is_static);
+                // This is more complicated than blocking and waiting for the next
+                // tfm but is maybe more efficient
+                // TODO(lucasw) possibly there is a 10-20% cpu usage reduction when tf
+                // arriving at 500 Hz
+                let mut tfms = Vec::new();
+                let max_num_tfm = 50;
+                {
+                    let mut tfm_iter = tfm_receiver.try_iter();
+                    // take in as many as 50 transform messages
+                    for _ in 0..max_num_tfm {
+                        let rv = tfm_iter.next();
+                        match rv {
+                            Some(tfm_static) => {
+                                tfms.push(tfm_static);
+                            }
+                            None => {
+                                break;
+                            }
+                        }
                     }
-                    Err(e) => {
-                        // TODO(lucasw) the panic only shuts down this thread, not the whole
-                        // application
-                        panic!("{e:?} - did this node get killed?");
+                }
+
+                let num_tfms = tfms.len();
+                if num_tfms > 0 {
+                    // write batches of up to 50 transforms
+                    let mut buffer_writer = buffer_for_writing.write().unwrap();
+                    for (tfm, is_static) in tfms {
+                        buffer_writer.handle_incoming_transforms(tfm, is_static);
                     }
+                }
+
+                // if tfms is full don't sleep, maybe more are queue
+                if num_tfms < max_num_tfm {
+                    tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
                 }
             }
         });
