@@ -2,9 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
   pull_request:
-    branches: [main]
   schedule:
     - cron: '0 15 * * 0,4' # Every Monday and Friday at 00:00 JST
 
@@ -15,7 +13,6 @@ env:
   RUST_BACKTRACE: 1
   RUSTDOCFLAGS: -D warnings
   RUSTFLAGS: -D warnings
-  RUSTUP_MAX_RETRIES: 10
 
 defaults:
   run:
@@ -29,72 +26,45 @@ jobs:
   build:
     strategy:
       fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+
+      - name: apt update
+        run: |
+          sudo apt-get update
+
+      - name: apt upgrade
+        run: |
+          sudo apt-get upgrade
+
+      - name: apt rust installs
+        run: |
+          sudo apt-get install -yqq cargo
+          sudo apt-get install -yqq rustc
+          sudo apt-get install -yqq librust-openssl-dev
+          cargo --version
+          rustc --version
+
+      - name: more apt installs
+        run: |
+          sudo apt-get install -yqq python3-rosmsg pkg-config rospack-tools
+          sudo apt-get install -yqq libsensor-msgs-dev libstd-msgs-dev libgeometry-msgs-dev
+          sudo apt-get install -yqq ros-sensor-msgs ros-std-msgs ros-geometry-msgs
+          sudo apt-get install -yqq libstd-srvs-dev python3-std-srvs ros-std-srvs
+          rospack find geometry_msgs
+
       - run: cargo build
 
-  test:
-    name: Test Suite
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - run: echo "ROS2_DISTRO=humble" >>"${GITHUB_ENV}"
-      - name: Install ROS2
-        run: |
-          # for tf_r2r
-          sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key  -o /usr/share/keyrings/ros-archive-keyring.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
-          sudo apt-get update
-          sudo apt-get install -y ros-$ROS2_DISTRO-ros-core ros-$ROS2_DISTRO-geometry-msgs ros-$ROS2_DISTRO-tf2-msgs
-      - name: cargo test
-        run: |
-          # for tf_r2r
-          source /opt/ros/$ROS2_DISTRO/setup.bash
-          cargo test --all-features
+      - run: cargo test -p tf_roslibrust
 
-  fmt:
-    name: Rustfmt
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@nightly
-        with:
-          components: rustfmt
-      - run: cargo fmt --all --check
+      - run: cargo fmt -p tf_roslibrust --check
 
-  clippy:
-    name: Clippy
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-      - run: echo "ROS2_DISTRO=humble" >>"${GITHUB_ENV}"
-      - name: Install ROS2
-        run: |
-          # for tf_r2r
-          sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key  -o /usr/share/keyrings/ros-archive-keyring.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
-          sudo apt-get update
-          sudo apt-get install -y ros-$ROS2_DISTRO-ros-core ros-$ROS2_DISTRO-geometry-msgs ros-$ROS2_DISTRO-tf2-msgs
-      - name: cargo clippy
-        run: |
-          # for tf_r2r
-          source /opt/ros/$ROS2_DISTRO/setup.bash
-          cargo clippy --all-features --all-targets
+      - run: cargo clippy -p tf_roslibrust
 
   spell-check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
