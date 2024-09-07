@@ -6,7 +6,7 @@ use crate::{
 
 use roslibrust::ros1::NodeHandle;
 use roslibrust_codegen::Time;
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{mpsc, Arc, RwLock};
 
 ///This struct tries to be the same as the C++ version of `TransformListener`. Use this struct to lookup transforms.
 ///
@@ -29,7 +29,7 @@ use std::sync::{mpsc, Arc, Mutex};
 /// */
 /// ```
 pub struct TfListener {
-    buffer: Arc<Mutex<TfBuffer>>,
+    buffer: Arc<RwLock<TfBuffer>>,
     _buffer_handle: tokio::task::JoinHandle<()>,
     _tf_handle: tokio::task::JoinHandle<()>,
     _tf_static_handle: tokio::task::JoinHandle<()>,
@@ -38,8 +38,7 @@ pub struct TfListener {
 impl TfListener {
     /// Create a new TfListener
     pub async fn new(nh: &NodeHandle) -> Self {
-        // TODO(lucasw) RwLock
-        let buffer = Arc::new(Mutex::new(TfBuffer::new()));
+        let buffer = Arc::new(RwLock::new(TfBuffer::new()));
 
         let (static_tfm_sender, tfm_receiver) = mpsc::sync_channel(4000);
 
@@ -83,7 +82,7 @@ impl TfListener {
                     Ok((tfm, is_static)) => {
                         // r1.write().unwrap().handle_incoming_transforms(tfm, true);
                         buffer_for_writing
-                            .lock()
+                            .write()
                             .unwrap()
                             .handle_incoming_transforms(tfm, is_static);
                     }
@@ -118,7 +117,7 @@ impl TfListener {
         time: Option<Time>,
     ) -> Result<TransformStamped, TfError> {
         // self.buffer.read().unwrap().lookup_transform(from, to, time)
-        self.buffer.lock().unwrap().lookup_transform(from, to, time)
+        self.buffer.read().unwrap().lookup_transform(from, to, time)
     }
 
     /// Looks up a transform within the tree at a given time for each frame with
@@ -131,11 +130,8 @@ impl TfListener {
         time2: Time,
         fixed_frame: &str,
     ) -> Result<TransformStamped, TfError> {
-        // self.buffer
-        //    .read()
-        //    .unwrap()
         self.buffer
-            .lock()
+            .read()
             .unwrap()
             .lookup_transform_with_time_travel(from, time1, to, time2, fixed_frame)
     }
