@@ -1,8 +1,16 @@
+
+This project is forked from [arjo129 rustros_tf](https://github.com/arjo129/rustros_tf), [MaxiMaerz rustros_tf](https://github.com/MaxiMaerz/rustros_tf), [smilerobotics/tf_rosrust](https://github.com/smilerobotics/tf_rosrust)
+
+# tf_roslibrust
+
+Port of tf_rosrust to use roslibrust.
+
+Additional details in [tf_roslibrust/README.md](tf_roslibrust/README.md)
+
+See also https://github.com/Carter12s/roslibrust/discussions/177 and https://github.com/smilerobotics/tf_rosrust/pull/55
+
+
 # tf_rosrust
-
-[![Build Status](https://img.shields.io/github/actions/workflow/status/smilerobotics/tf_rosrust/ci.yml?branch=main&logo=github)](https://github.com/smilerobotics/tf_rosrust/actions) [![crates.io](https://img.shields.io/crates/v/tf_rosrust.svg?logo=rust)](https://crates.io/crates/tf_rosrust) [![docs](https://docs.rs/tf_rosrust/badge.svg)](https://docs.rs/tf_rosrust)
-
-This project is forked from [arjo129 rustros_tf](https://github.com/arjo129/rustros_tf),[MaxiMaerz rustros_tf](https://github.com/MaxiMaerz/rustros_tf).
 
 - changes from original code
     - fix transformations by MaxiMaerz
