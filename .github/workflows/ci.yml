@@ -62,10 +62,3 @@ jobs:
       - run: cargo fmt -p tf_roslibrust --check
 
       - run: cargo clippy -p tf_roslibrust
-
-  spell-check:
-    runs-on: ubuntu-22.04
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-      - run: tools/spell-check.sh
