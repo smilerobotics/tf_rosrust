@@ -24,6 +24,3 @@ nalgebra.workspace = true
 r2r = { workspace = true, optional = true }
 thiserror.workspace = true
 tokio = { workspace = true, features = ["full"] }
-
-[lints]
-workspace = true

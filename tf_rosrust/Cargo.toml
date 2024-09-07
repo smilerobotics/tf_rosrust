@@ -19,6 +19,3 @@ This supports ROS1 using rosrust crate.
 rosrust.workspace = true
 nalgebra.workspace = true
 thiserror.workspace = true
-
-[lints]
-workspace = true
