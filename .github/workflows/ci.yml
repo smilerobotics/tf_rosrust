@@ -56,6 +56,11 @@ jobs:
           rospack find geometry_msgs
           echo "ROS_PACKAGE_PATH=`rospack find geometry_msgs`:`rospack find tf2_msgs`:`rospack find std_msgs`:`rospack find actionlib_msgs`" >> $GITHUB_ENV
 
+      - run: |
+          ! [[ -z "$ROS_PACKAGE_PATH" ]]
+
+      - run: echo $ROS_PACKAGE_PATH
+
       - run: cargo build
 
       - run: cargo test -p tf_roslibrust
