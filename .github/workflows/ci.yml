@@ -54,6 +54,7 @@ jobs:
           sudo apt-get install -yqq ros-sensor-msgs ros-std-msgs ros-geometry-msgs
           sudo apt-get install -yqq libstd-srvs-dev python3-std-srvs ros-std-srvs
           rospack find geometry_msgs
+          echo "ROS_PACKAGE_PATH=`rospack find geometry_msgs`:`rospack find tf2_msgs`:`rospack find std_msgs`:`rospack find actionlib_msgs`" >> $GITHUB_ENV
 
       - run: cargo build
 
