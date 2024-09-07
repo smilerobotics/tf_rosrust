@@ -29,7 +29,8 @@ impl TfIndividualTransformChain {
         }
     }
 
-    fn newest_stamp(&self) -> Option<TimeDelta> {
+    #[allow(dead_code)]
+    pub fn newest_stamp(&self) -> Option<TimeDelta> {
         let key_value = self.transform_chain.last_key_value();
         match key_value {
             Some(key_value) => {
