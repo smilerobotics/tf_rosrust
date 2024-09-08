@@ -29,7 +29,7 @@ use std::sync::{mpsc, Arc, RwLock};
 /// */
 /// ```
 pub struct TfListener {
-    buffer: Arc<RwLock<TfBuffer>>,
+    pub buffer: Arc<RwLock<TfBuffer>>,
     buffer_handle: tokio::task::JoinHandle<()>,
     tf_handle: tokio::task::JoinHandle<()>,
     tf_static_handle: tokio::task::JoinHandle<()>,

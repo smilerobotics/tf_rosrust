@@ -45,3 +45,11 @@ version = "0.10"
 # git = "https://github.com/lucasw/roslibrust.git"
 # rev = "a1eb5a875906a26aa172a7465dd018858d191665"
 # branch = "time_ops"
+
+[[bin]]
+name = "tf_tree"
+path = "src/bin/tree.rs"
+
+[[bin]]
+name = "tf_echo"
+path = "src/bin/echo.rs"

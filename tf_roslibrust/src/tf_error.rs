@@ -24,6 +24,8 @@ pub enum TfError {
     /// In the event that a write is simultaneously happening with a read of the same tf buffer
     #[error("tf_rosrust: CouldNotAcquireLock")]
     CouldNotAcquireLock,
+    #[error("tf_roslibrust: EmptyTree")]
+    EmptyTree,
     /// Error of rosrust
     #[error("tf_rosrust: rosrust error {:?}", .0)]
     Rosrust(String),

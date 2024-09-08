@@ -73,6 +73,10 @@ impl TfBuffer {
         .add_to_buffer(transform.clone());
     }
 
+    pub fn get_parent_to_children(&self) -> HashMap<String, HashSet<String>> {
+        self.child_transform_index.clone()
+    }
+
     /// traverse tf tree straight upwards until there are no more parents
     fn get_path_to_root(&self, frame: &str) -> Result<(Vec<String>, HashSet<String>), TfError> {
         let frame = frame.to_string();
@@ -108,6 +112,16 @@ impl TfBuffer {
             frame_lineage.push(cur_frame.clone());
         }
         Ok((frame_lineage, frame_lineage_visited))
+    }
+
+    pub fn get_root(&self) -> Result<String, TfError> {
+        let parent = self
+            .child_transform_index
+            .keys()
+            .next()
+            .ok_or(TfError::EmptyTree)?;
+        let (lineage, _) = self.get_path_to_root(parent)?;
+        lineage.last().cloned().ok_or(TfError::EmptyTree)
     }
 
     /// Retrieves the transform path
@@ -178,6 +192,7 @@ impl TfBuffer {
         Ok(res)
     }
 
+    // get tf chain from one frame to another
     fn get_tf_list(
         &self,
         from: &str,
