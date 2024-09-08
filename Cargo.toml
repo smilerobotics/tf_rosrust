@@ -1,17 +1,16 @@
 [workspace]
 resolver = "2"
 members = [
-    "tf_r2r",
     "tf_roslibrust",
-    "tf_rosrust",
 ]
 
 [workspace.package]
 edition = "2021"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/smilerobotics/tf_rosrust"
+repository = "https://github.com/lucasw/tf_roslibrust"
 authors = [
     "Arjo Chakravarty <arjo129@gmail.com>",
+    "Lucas Walter <wsacul@gmail.com",
     "Michael Maerz <maerz@magazino.eu>",
     "Mitsuharu Kojima <kojima@smilerobotics.com>",
 ]
@@ -21,7 +20,5 @@ categories = ["science::robotics"]
 [workspace.dependencies]
 futures = "0.3"
 nalgebra = "0.30"
-r2r = "0.9"
-rosrust = "0.9"
 thiserror = "1.0"
 tokio = "1"
