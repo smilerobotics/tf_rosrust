@@ -1,0 +1,13 @@
+[[tf]]
+frame = "odom"
+child_frame = "test0"
+x = 1.0
+y = 2.0
+z = 3.0
+roll = 0.34
+
+[[tf]]
+frame = "odom"
+child_frame = "test1"
+x = -1.0
+pitch = 1.3
