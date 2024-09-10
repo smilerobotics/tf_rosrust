@@ -42,8 +42,9 @@ pub struct TfBroadcaster {
 impl TfBroadcaster {
     /// Create a new TfBroadcaster
     pub async fn new(nh: &NodeHandle) -> Self {
+        let latching = false;
         Self {
-            publisher: nh.advertise("/tf", 1000).await.unwrap(),
+            publisher: nh.advertise("/tf", 1000, latching).await.unwrap(),
         }
     }
 
