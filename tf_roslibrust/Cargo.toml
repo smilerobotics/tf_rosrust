@@ -26,27 +26,23 @@ tokio = "1.38.0"
 toml = "0.8.19"
 
 [dependencies.roslibrust]
-git = "https://github.com/Carter12s/roslibrust.git"
-branch = "master"
-# version = "0.10.2"
-# rev = "a1eb5a875906a26aa172a7465dd018858d191665"
-# branch = "time_ops"
+git = "https://github.com/lucasw/roslibrust"
+branch = "subscribe_any"
+# path = "../../roslibrust/roslibrust"
+# version="0.10.2"
 features = ["ros1"]
 
 [dependencies.roslibrust_codegen]
-git = "https://github.com/Carter12s/roslibrust.git"
-branch = "master"
-# version = "0.10"
-# rev = "a1eb5a875906a26aa172a7465dd018858d191665"
-# branch = "time_ops"
+git = "https://github.com/lucasw/roslibrust"
+branch = "subscribe_any"
+# path = "../../roslibrust/roslibrust_codegen"
+# version="0.10"
 
 [dependencies.roslibrust_codegen_macro]
-git = "https://github.com/Carter12s/roslibrust.git"
-branch = "master"
-# version = "0.10"
-# git = "https://github.com/lucasw/roslibrust.git"
-# rev = "a1eb5a875906a26aa172a7465dd018858d191665"
-# branch = "time_ops"
+git = "https://github.com/lucasw/roslibrust"
+branch = "subscribe_any"
+# path = "../../roslibrust/roslibrust_codegen_macro"
+# version="0.10"
 
 [[bin]]
 name = "tf_tree"
