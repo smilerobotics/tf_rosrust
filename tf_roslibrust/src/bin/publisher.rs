@@ -54,27 +54,9 @@ fn get_transforms(filename: &str) -> Result<tf2_msgs::TFMessage, anyhow::Error> 
             transform.transform.translation.z = z;
         }
 
-        let roll = {
-            if let Some(roll) = tfr.roll {
-                roll
-            } else {
-                0.0
-            }
-        };
-        let pitch = {
-            if let Some(pitch) = tfr.pitch {
-                pitch
-            } else {
-                0.0
-            }
-        };
-        let yaw = {
-            if let Some(yaw) = tfr.yaw {
-                yaw
-            } else {
-                0.0
-            }
-        };
+        let roll = tfr.roll.unwrap_or(0.0);
+        let pitch = tfr.pitch.unwrap_or(0.0);
+        let yaw = tfr.yaw.unwrap_or(0.0);
 
         let unit_quat = nalgebra::UnitQuaternion::from_euler_angles(roll, pitch, yaw);
         let quat = unit_quat.quaternion();
