@@ -4,7 +4,7 @@ use serde_derive::Deserialize;
 use std::collections::HashMap;
 use std::time::SystemTime;
 
-roslibrust_codegen_macro::find_and_generate_ros_messages!();
+use crate::transforms::{geometry_msgs, tf2_msgs};
 
 pub fn to_stamp(secs: u32, nsecs: u32) -> Time {
     roslibrust_codegen::Time { secs, nsecs }
