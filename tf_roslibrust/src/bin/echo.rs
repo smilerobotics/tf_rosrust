@@ -80,9 +80,17 @@ async fn main() -> Result<(), anyhow::Error> {
                 println!("- Translation: [{:.3} {:.3} {:.3}]", xyz.x, xyz.y, xyz.z);
                 let quat = tf.transform.rotation;
                 println!(
-                    "- Rotation: [{:.3} {:.3} {:.3} {:.3}]",
+                    "- Rotation: in Quaternion [{:.6} {:.6} {:.6} {:.6}]",
                     quat.x, quat.y, quat.z, quat.w
                 );
+
+                // nalgebra documentation ought to say what components are in what place in this
+                // constructor
+                let unit_quat = nalgebra::UnitQuaternion::from_quaternion(
+                    nalgebra::Quaternion::new(quat.w, quat.x, quat.y, quat.z),
+                );
+                let (roll, pitch, yaw) = unit_quat.euler_angles();
+                println!("            in RPY (radian) [{roll:.6} {pitch:.6} {yaw:.6}]",);
             }
             Err(err) => {
                 println!("{t1:?} {err:?}");
