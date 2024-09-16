@@ -22,6 +22,12 @@ pub struct TfBuffer {
     cache_duration: TimeDelta,
 }
 
+impl Default for TfBuffer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 const DEFAULT_CACHE_DURATION_SECONDS: u16 = 10;
 
 impl TfBuffer {
