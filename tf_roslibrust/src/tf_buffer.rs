@@ -25,7 +25,7 @@ pub struct TfBuffer {
 const DEFAULT_CACHE_DURATION_SECONDS: u16 = 10;
 
 impl TfBuffer {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self::new_with_duration(TimeDelta::new(DEFAULT_CACHE_DURATION_SECONDS.into(), 0).unwrap())
     }
 
@@ -38,7 +38,7 @@ impl TfBuffer {
         }
     }
 
-    pub(crate) fn handle_incoming_transforms(&mut self, transforms: TFMessage, static_tf: bool) {
+    pub fn handle_incoming_transforms(&mut self, transforms: TFMessage, static_tf: bool) {
         for transform in transforms.transforms {
             self.add_transform(&transform, static_tf);
         }
@@ -46,7 +46,7 @@ impl TfBuffer {
 
     // don't detect loops here on the assumption that the transforms are arriving
     // much faster than lookup are occuring, so only detect loops in a lookup
-    fn add_transform(&mut self, transform: &TransformStamped, is_static_tf: bool) {
+    pub fn add_transform(&mut self, transform: &TransformStamped, is_static_tf: bool) {
         // TODO(lucasw) need to retire transforms from this index when they expire
         self.parent_transform_index.insert(
             transform.child_frame_id.clone(),
