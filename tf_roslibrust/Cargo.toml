@@ -45,6 +45,10 @@ branch = "subscribe_any"
 # version="0.10"
 
 [[bin]]
+name = "tf_capture"
+path = "src/bin/capture.rs"
+
+[[bin]]
 name = "tf_tree"
 path = "src/bin/tree.rs"
 

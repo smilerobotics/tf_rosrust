@@ -1,6 +1,6 @@
 use chrono::TimeDelta;
 use roslibrust_codegen::Time;
-use serde_derive::Deserialize;
+use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::SystemTime;
 
@@ -39,7 +39,7 @@ pub fn stamp_to_f64(stamp: Time) -> f64 {
 }
 
 /// use for loading from a toml
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 struct TransformRaw {
     frame: String,
     child_frame: String,
@@ -49,6 +49,42 @@ struct TransformRaw {
     roll: Option<f64>,
     pitch: Option<f64>,
     yaw: Option<f64>,
+}
+
+impl TransformRaw {
+    fn from_transform_stamped(tfs: geometry_msgs::TransformStamped) -> Self {
+        let rot = tfs.transform.rotation;
+        let quat = nalgebra::UnitQuaternion::new_normalize(nalgebra::geometry::Quaternion::new(
+            rot.w, rot.x, rot.y, rot.z,
+        ));
+        let (roll, pitch, yaw) = quat.euler_angles();
+
+        let tr = tfs.transform.translation;
+        let (x, y, z) = (tr.x, tr.y, tr.z);
+
+        Self {
+            frame: tfs.header.frame_id,
+            child_frame: tfs.child_frame_id,
+            x: Some(x),
+            y: Some(y),
+            z: Some(z),
+            roll: Some(roll),
+            pitch: Some(pitch),
+            yaw: Some(yaw),
+        }
+    }
+}
+
+pub fn transforms_to_toml(tfm: tf2_msgs::TFMessage) -> Result<String, anyhow::Error> {
+    let mut tf_vec = Vec::new();
+    for tfs in tfm.transforms {
+        tf_vec.push(TransformRaw::from_transform_stamped(tfs));
+    }
+
+    let mut tf_data = HashMap::new();
+    tf_data.insert("tf", tf_vec);
+
+    Ok(toml::to_string(&tf_data).unwrap())
 }
 
 pub fn get_transforms_from_toml(filename: &str) -> Result<tf2_msgs::TFMessage, anyhow::Error> {
