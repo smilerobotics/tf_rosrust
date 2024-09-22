@@ -138,3 +138,32 @@ pub fn get_transforms_from_toml(filename: &str) -> Result<tf2_msgs::TFMessage, a
 
     Ok(tfm)
 }
+
+// adapted from 'old_tf_to_new_tf'
+pub fn tf2tf(tf_listener: &crate::tf_listener::TfListener,
+    lookup_parent: &str, lookup_child: &str, broadcast_parent: &str, broadcast_child: &str,
+    zero_x: bool, zero_y: bool, zero_z: bool, zero_rotation: bool,
+) -> Result<geometry_msgs::TransformStamped, anyhow::Error> {
+    // get the most recent parent child transform, zero out x,y,z and/or rotation
+    // TODO(lucasw) does tf listener handle looping time?  No it doesn't
+    let mut tfs = tf_listener.lookup_transform(lookup_parent, lookup_child, None)?;
+
+    tfs.header.frame_id = broadcast_parent.to_string();
+    tfs.child_frame_id = broadcast_child.to_string();
+    if zero_x {
+        tfs.transform.translation.x = 0.0;
+    }
+    if zero_y {
+        tfs.transform.translation.y = 0.0;
+    }
+    if zero_z {
+        tfs.transform.translation.z = 0.0;
+    }
+    if zero_rotation {
+        tfs.transform.rotation.x = 0.0;
+        tfs.transform.rotation.y = 0.0;
+        tfs.transform.rotation.z = 0.0;
+        tfs.transform.rotation.w = 1.0;
+    }
+    Ok(tfs)
+}
