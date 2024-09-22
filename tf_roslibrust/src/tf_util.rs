@@ -146,9 +146,7 @@ pub fn tf2tf(
     lookup_child: &str,
     broadcast_parent: &str,
     broadcast_child: &str,
-    zero_x: bool,
-    zero_y: bool,
-    zero_z: bool,
+    zero_xyz: (bool, bool, bool),
     zero_rotation: bool,
 ) -> Result<geometry_msgs::TransformStamped, anyhow::Error> {
     // get the most recent parent child transform, zero out x,y,z and/or rotation
@@ -157,6 +155,7 @@ pub fn tf2tf(
 
     tfs.header.frame_id = broadcast_parent.to_string();
     tfs.child_frame_id = broadcast_child.to_string();
+    let (zero_x, zero_y, zero_z) = zero_xyz;
     if zero_x {
         tfs.transform.translation.x = 0.0;
     }
