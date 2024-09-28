@@ -159,11 +159,10 @@ impl TfBuffer {
             if common_parent.is_none() {
                 // TODO(lucasw) could also delineate where one transform or the other isn't in the tree
                 // at all
-                println!("disconnected trees: {from_lineage:?} - {to_lineage:?}");
                 return Err(TfError::CouldNotFindTransform(
                     from.to_string(),
                     to.to_string(),
-                    self.child_transform_index.clone(),
+                    "disconnected trees, no common parent".to_string(),
                 ));
             }
             common_parent.unwrap()

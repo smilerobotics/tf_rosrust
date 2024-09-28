@@ -19,8 +19,8 @@ pub enum TfError {
     #[error("tf_rosrust: LoopDetected between {} and root -> ({:?})", .0, .1)]
     LoopDetected(String, HashMap<String, HashSet<String>>),
     /// There is no path between the from and to frame (disconnected trees).
-    #[error("tf_rosrust: CouldNotFindTransform {} -> {} ({:?})", .0, .1, .2)]
-    CouldNotFindTransform(String, String, HashMap<String, HashSet<String>>),
+    #[error("tf_rosrust: CouldNotFindTransform {} -> {} ({})", .0, .1, .2)]
+    CouldNotFindTransform(String, String, String),
     /// In the event that a write is simultaneously happening with a read of the same tf buffer
     #[error("tf_rosrust: CouldNotAcquireLock")]
     CouldNotAcquireLock,
