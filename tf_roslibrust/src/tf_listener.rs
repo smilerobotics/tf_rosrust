@@ -47,7 +47,7 @@ impl TfListener {
         let mut dynamic_subscriber = nh.subscribe::<TFMessage>("/tf", 200).await.unwrap();
         let tf_handle = tokio::spawn(async move {
             while let Some(rv) = dynamic_subscriber.next().await {
-                print!(".");
+                // print!(".");
                 match rv {
                     Ok(tfm) => {
                         let _ = dyn_tfm_sender.send((tfm, false));
@@ -62,7 +62,7 @@ impl TfListener {
         let mut static_subscriber = nh.subscribe::<TFMessage>("/tf_static", 200).await.unwrap();
         let tf_static_handle = tokio::spawn(async move {
             while let Some(rv) = static_subscriber.next().await {
-                print!(".");
+                // print!(".");
                 match rv {
                     Ok(tfm) => {
                         let _ = static_tfm_sender.send((tfm, true));
