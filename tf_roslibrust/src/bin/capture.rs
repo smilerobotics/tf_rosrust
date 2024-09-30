@@ -29,7 +29,7 @@ async fn main() -> Result<(), anyhow::Error> {
     // println!("{}", format!("full ns and node name: {full_node_name}"));
 
     let config_file = &args2[1];
-    let tfm = tf_util::get_transforms_from_toml(config_file)?;
+    let old_tfm = tf_util::get_transforms_from_toml(config_file)?;
 
     let nh = NodeHandle::new(&std::env::var("ROS_MASTER_URI")?, full_node_name)
         .await
@@ -42,15 +42,19 @@ async fn main() -> Result<(), anyhow::Error> {
     let listener = tf_roslibrust::TfListener::new(&nh).await;
 
     // let some transforms arrive
-    tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+    // TODO(lucasw) make this a param or regular cli arg
+    let gather_tf_seconds = 3;
+    println!("# waiting {gather_tf_seconds}s for transforms");
+    tokio::time::sleep(tokio::time::Duration::from_secs(gather_tf_seconds)).await;
 
     let mut new_tfm = tf2_msgs::TFMessage::default();
-    for old_tfs in &tfm.transforms {
+    for old_tfs in &old_tfm.transforms {
         // TODO(lucasw) make a lookup_most_recent_transform and then don't need the None
         let res =
             listener.lookup_transform(&old_tfs.header.frame_id, &old_tfs.child_frame_id, None);
         match res {
             Ok(new_tfs) => {
+                // println!("{new_tfs:?}");
                 new_tfm.transforms.push(new_tfs);
                 // TODO(lucasw) compare old values to current values, warn if large
             }
@@ -61,7 +65,7 @@ async fn main() -> Result<(), anyhow::Error> {
         }
     }
 
-    let toml = tf_util::transforms_to_toml(tfm)?;
+    let toml = tf_util::transforms_to_toml(new_tfm)?;
     print!("\n\n{toml}");
 
     Ok(())
