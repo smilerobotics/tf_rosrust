@@ -68,7 +68,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let listener = TfListener::new(&nh).await;
 
     // let some transforms arrive
-    tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+    tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
 
     {
         // TODO(lucasw) make tf listener stop listening
