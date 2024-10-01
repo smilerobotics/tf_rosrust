@@ -1,6 +1,6 @@
 [package]
 name = "tf_roslibrust"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.75"
 license = "BSD 3-Clause"
@@ -27,20 +27,20 @@ toml = "0.8.19"
 
 [dependencies.roslibrust]
 git = "https://github.com/lucasw/roslibrust"
-branch = "subscribe_any"
+branch = "get_rx_msg_def"
 # path = "../../roslibrust/roslibrust"
 # version="0.10.2"
 features = ["ros1"]
 
 [dependencies.roslibrust_codegen]
 git = "https://github.com/lucasw/roslibrust"
-branch = "subscribe_any"
+branch = "get_rx_msg_def"
 # path = "../../roslibrust/roslibrust_codegen"
 # version="0.10"
 
 [dependencies.roslibrust_codegen_macro]
 git = "https://github.com/lucasw/roslibrust"
-branch = "subscribe_any"
+branch = "get_rx_msg_def"
 # path = "../../roslibrust/roslibrust_codegen_macro"
 # version="0.10"
 
