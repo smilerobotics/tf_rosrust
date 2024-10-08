@@ -287,8 +287,21 @@ impl TfBuffer {
         Ok(tf_list)
     }
 
+    // debug the tf chains
+    pub fn print_chains(&self) {
+        // transform_data: HashMap<TfGraphNode, TfIndividualTransformChain>,
+        println!("chains over {:?} [", self.cache_duration);
+        for (_graph_node, chain) in self.transform_data.iter() {
+            // println!("{graph_node:?}");
+            chain.print();
+        }
+        println!("]");
+    }
+}
+
+impl crate::LookupTransform for TfBuffer {
     /// Looks up a transform within the tree at a given time.
-    pub fn lookup_transform(
+    fn lookup_transform(
         &self,
         from: &str,
         to: &str,
@@ -383,7 +396,7 @@ impl TfBuffer {
         Ok(msg)
     }
 
-    pub(crate) fn lookup_transform_with_time_travel(
+    fn lookup_transform_with_time_travel(
         &self,
         to: &str,
         time2: Time,
@@ -403,17 +416,6 @@ impl TfBuffer {
             time1,
         ))
     }
-
-    // debug the tf chains
-    pub fn print_chains(&self) {
-        // transform_data: HashMap<TfGraphNode, TfIndividualTransformChain>,
-        println!("chains over {:?} [", self.cache_duration);
-        for (_graph_node, chain) in self.transform_data.iter() {
-            // println!("{graph_node:?}");
-            chain.print();
-        }
-        println!("]");
-    }
 }
 
 #[cfg(test)]
@@ -422,6 +424,7 @@ mod test {
 
     use super::*;
     use crate::transforms::geometry_msgs::{Quaternion, Transform, Vector3};
+    use crate::LookupTransform;
 
     const PARENT: &str = "parent";
     const CHILD0: &str = "child0";

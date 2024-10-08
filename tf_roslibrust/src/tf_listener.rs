@@ -143,9 +143,11 @@ impl TfListener {
         self.tf_static_handle.abort();
         println!("tf listener force finish done");
     }
+}
 
+impl crate::LookupTransform for TfListener {
     /// Looks up a transform within the tree at a given time.
-    pub fn lookup_transform(
+    fn lookup_transform(
         &self,
         from: &str,
         to: &str,
@@ -157,7 +159,7 @@ impl TfListener {
 
     /// Looks up a transform within the tree at a given time for each frame with
     /// respect to a fixed frame.
-    pub fn lookup_transform_with_time_travel(
+    fn lookup_transform_with_time_travel(
         &self,
         from: &str,
         time1: Time,

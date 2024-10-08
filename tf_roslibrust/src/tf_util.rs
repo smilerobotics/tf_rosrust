@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use std::time::SystemTime;
 
 use crate::transforms::{geometry_msgs, tf2_msgs};
+use crate::LookupTransform;
 
 pub fn to_stamp(secs: u32, nsecs: u32) -> Time {
     roslibrust_codegen::Time { secs, nsecs }

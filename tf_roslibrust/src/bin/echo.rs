@@ -1,3 +1,4 @@
+use tf_roslibrust::LookupTransform;
 use tf_roslibrust::{tf_util, TfListener};
 
 roslibrust_codegen_macro::find_and_generate_ros_messages!();

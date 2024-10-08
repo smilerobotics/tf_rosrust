@@ -20,6 +20,24 @@
 //! */
 //!```
 
+pub trait LookupTransform {
+    fn lookup_transform(
+        &self,
+        from: &str,
+        to: &str,
+        stamp0: Option<roslibrust_codegen::Time>,
+    ) -> Result<transforms::geometry_msgs::TransformStamped, tf_error::TfError>;
+
+    fn lookup_transform_with_time_travel(
+        &self,
+        to: &str,
+        time2: roslibrust_codegen::Time,
+        from: &str,
+        time1: roslibrust_codegen::Time,
+        fixed_frame: &str,
+    ) -> Result<transforms::geometry_msgs::TransformStamped, tf_error::TfError>;
+}
+
 mod tf_broadcaster;
 mod tf_buffer;
 mod tf_error;
