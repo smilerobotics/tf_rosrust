@@ -238,18 +238,24 @@ impl TfIndividualTransformChain {
     pub fn print(&self) {
         let rv0 = self.transform_chain.first_key_value();
         let rv1 = self.transform_chain.last_key_value();
-
-        print!(
+        if self.is_static {
+            print!("[static] ");
+        }
+        let postfix = format!(
             "'{}' -> '{}' - cache_duration: {:?} ",
             self.parent, self.child, self.cache_duration
         );
         if let Some((first_key, _)) = rv0 {
             if let Some((last_key, _)) = rv1 {
-                let time_diff = *last_key - *first_key;
-                println!("first: {first_key:?} last: {last_key:?}, diff: {time_diff:?}");
+                let time_diff = duration_to_f64(*last_key - *first_key);
+                println!(
+                    "first: {:.1} last: {:.1}, diff: {time_diff} {postfix}",
+                    duration_to_f64(*first_key),
+                    duration_to_f64(*last_key)
+                );
                 return;
             }
         }
-        println!("- error in either of {rv0:?} {rv1:?}");
+        println!("{postfix} error in either of {rv0:?} {rv1:?}");
     }
 }

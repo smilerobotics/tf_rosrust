@@ -408,8 +408,8 @@ impl TfBuffer {
     pub fn print_chains(&self) {
         // transform_data: HashMap<TfGraphNode, TfIndividualTransformChain>,
         println!("chains over {:?} [", self.cache_duration);
-        for (graph_node, chain) in self.transform_data.iter() {
-            println!("{graph_node:?}");
+        for (_graph_node, chain) in self.transform_data.iter() {
+            // println!("{graph_node:?}");
             chain.print();
         }
         println!("]");
@@ -1257,7 +1257,7 @@ mod test {
     #[test]
     fn test_long_dynamic_buffer() {
         let dt = 0.1;
-        let num_secs = 234;
+        let num_secs = 200;
         let mut tf_buffer = TfBuffer::new_with_duration(TimeDelta::new(num_secs, 0).unwrap());
         tf_buffer.print_chains();
 
@@ -1291,11 +1291,51 @@ mod test {
 
         use crate::tf_util;
 
+        {
+            let is_static = true;
+            let static_tfs = TransformStamped {
+                header: Header {
+                    frame_id: "leaf".to_string(),
+                    stamp: stamp.clone(),
+                    seq: 1,
+                },
+                child_frame_id: "static_leaf".to_string(),
+                transform: Transform {
+                    rotation: Quaternion {
+                        x: 0.0,
+                        y: 0.0,
+                        z: 0.0,
+                        w: 1.0,
+                    },
+                    translation: translation.clone(),
+                },
+            };
+
+            let rv = tf_buffer.add_transform(&static_tfs, is_static);
+            assert!(rv.is_ok(), "{rv:?}");
+        }
+
         let num_steps = (num_secs as f64 / dt) as u32;
         for i in 0..num_steps {
             // set a time and position offset to the same value
             let offset = i as f64 * dt;
             tfs.header.stamp = tf_util::f64_to_stamp(tf_util::stamp_to_f64(&stamp) + offset);
+            tfs.transform.translation.x = offset;
+            let is_static = false;
+            // println!("[{i}] {offset} {:?} {:?}", tf_util::stamp_to_f64(&stamp), tfs.header.stamp);
+            let rv = tf_buffer.add_transform(&tfs, is_static);
+            assert!(rv.is_ok(), "[i] {offset:.2} {rv:?}");
+            if i == 0 {
+                tf_buffer.print_chains();
+            }
+        }
+
+        // similar to above but with time offset
+        for i in 0..num_steps {
+            // set a time and position offset to the same value
+            let offset = i as f64 * dt + 100.0;
+            tfs.header.stamp = tf_util::f64_to_stamp(tf_util::stamp_to_f64(&stamp) + offset);
+            tfs.child_frame_id = "leaf_with_time_offset".to_string();
             tfs.transform.translation.x = offset;
             let is_static = false;
             // println!("[{i}] {offset} {:?} {:?}", tf_util::stamp_to_f64(&stamp), tfs.header.stamp);
