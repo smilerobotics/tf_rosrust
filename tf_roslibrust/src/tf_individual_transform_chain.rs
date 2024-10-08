@@ -151,13 +151,15 @@ impl TfIndividualTransformChain {
             let last_key = *keys.last().unwrap();
             // println!("{first_key} {last_key} spans {:.3}s", duration_to_f64(last_key - first_key));
             if time < first_key {
-                println!(
-                    "diff {:.3}, first key {:.3}, lookup {:.3}, num {}",
-                    duration_to_f64(keys[0] - time),
-                    duration_to_f64(keys[0]),
-                    duration_to_f64(time),
-                    keys.len()
-                );
+                if false {
+                    println!(
+                        "diff {:.3}, first key {:.3}, lookup {:.3}, num {}",
+                        duration_to_f64(keys[0] - time),
+                        duration_to_f64(keys[0]),
+                        duration_to_f64(time),
+                        keys.len()
+                    );
+                }
                 let first_transform = self.transform_chain.first_key_value().unwrap().1;
                 return Err(TfError::AttemptedLookupInPast(
                     format!(
