@@ -233,4 +233,23 @@ impl TfIndividualTransformChain {
         }
     }
     */
+
+    /// debug print the chain, could make this the proper Debug output
+    pub fn print(&self) {
+        let rv0 = self.transform_chain.first_key_value();
+        let rv1 = self.transform_chain.last_key_value();
+
+        print!(
+            "'{}' -> '{}' - cache_duration: {:?} ",
+            self.parent, self.child, self.cache_duration
+        );
+        if let Some((first_key, _)) = rv0 {
+            if let Some((last_key, _)) = rv1 {
+                let time_diff = *last_key - *first_key;
+                println!("first: {first_key:?} last: {last_key:?}, diff: {time_diff:?}");
+                return;
+            }
+        }
+        println!("- error in either of {rv0:?} {rv1:?}");
+    }
 }

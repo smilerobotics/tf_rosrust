@@ -403,6 +403,17 @@ impl TfBuffer {
             time1,
         ))
     }
+
+    // debug the tf chains
+    pub fn print_chains(&self) {
+        // transform_data: HashMap<TfGraphNode, TfIndividualTransformChain>,
+        println!("chains over {:?} [", self.cache_duration);
+        for (graph_node, chain) in self.transform_data.iter() {
+            println!("{graph_node:?}");
+            chain.print();
+        }
+        println!("]");
+    }
 }
 
 #[cfg(test)]
@@ -1246,8 +1257,9 @@ mod test {
     #[test]
     fn test_long_dynamic_buffer() {
         let dt = 0.1;
-        let num_secs = 200;
+        let num_secs = 234;
         let mut tf_buffer = TfBuffer::new_with_duration(TimeDelta::new(num_secs, 0).unwrap());
+        tf_buffer.print_chains();
 
         let translation = Vector3 {
             x: 0.0,
@@ -1289,7 +1301,13 @@ mod test {
             // println!("[{i}] {offset} {:?} {:?}", tf_util::stamp_to_f64(&stamp), tfs.header.stamp);
             let rv = tf_buffer.add_transform(&tfs, is_static);
             assert!(rv.is_ok(), "[i] {offset:.2} {rv:?}");
+            if i == 0 {
+                tf_buffer.print_chains();
+            }
         }
+
+        tf_buffer.print_chains();
+
         for i in 0..num_steps - 1 {
             let offset = i as f64 * dt + dt * 0.5;
             let stamp = tf_util::f64_to_stamp(tf_util::stamp_to_f64(&stamp) + offset);

@@ -86,5 +86,13 @@ async fn main() -> Result<(), anyhow::Error> {
         let _ = print_tree(&parent_to_children, &root, 0);
     }
 
+    // TODO(lucasw) trying to get node to fully unregister
+    println!("nh shutdown");
+    let rv = nh.inner.shutdown();
+    println!("nh shutdown {rv:?}");
+    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+    listener.force_finish();
+    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+    println!("done");
     Ok(())
 }
