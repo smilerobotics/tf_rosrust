@@ -47,10 +47,10 @@ impl TfBuffer {
     pub fn handle_incoming_transforms(
         &mut self,
         transforms: TFMessage,
-        static_tf: bool,
+        is_static: bool,
     ) -> Result<(), TfError> {
         for transform in transforms.transforms {
-            self.add_transform(&transform, static_tf)?;
+            self.add_transform(&transform, is_static)?;
         }
         Ok(())
     }
@@ -674,8 +674,8 @@ mod test {
             child: CHILD1.to_owned(),
         };
 
-        let static_tf = false;
-        assert!(tf_buffer.add_transform(&transform00, static_tf).is_ok());
+        let is_static = false;
+        assert!(tf_buffer.add_transform(&transform00, is_static).is_ok());
         assert_eq!(tf_buffer.child_transform_index.len(), 1);
         assert!(tf_buffer.child_transform_index.contains_key(PARENT));
 
@@ -689,7 +689,7 @@ mod test {
         assert!(data.is_some());
         assert_eq!(data.unwrap().transform_chain.len(), 1);
 
-        assert!(tf_buffer.add_transform(&transform01, static_tf).is_ok());
+        assert!(tf_buffer.add_transform(&transform01, is_static).is_ok());
         assert_eq!(tf_buffer.child_transform_index.len(), 1);
         assert!(tf_buffer.child_transform_index.contains_key(PARENT));
 
@@ -704,11 +704,11 @@ mod test {
         // dbg!(&data);
         assert_eq!(data.unwrap().transform_chain.len(), 2);
 
-        let static_tf = true;
+        let is_static = true;
         // a static transform chain will always be length 0, the latest overwrites the earlier one
         // (regardless of timestamp in the transform, it's set to zero internally anyhow)
-        assert!(tf_buffer.add_transform(&transform10, static_tf).is_ok());
-        assert!(tf_buffer.add_transform(&transform11, static_tf).is_ok());
+        assert!(tf_buffer.add_transform(&transform10, is_static).is_ok());
+        assert!(tf_buffer.add_transform(&transform11, is_static).is_ok());
         assert_eq!(tf_buffer.child_transform_index.len(), 1);
         assert!(tf_buffer.child_transform_index.contains_key(PARENT));
 
@@ -764,8 +764,8 @@ mod test {
             parent: PARENT.to_owned(),
         };
 
-        let static_tf = false;
-        assert!(tf_buffer.add_transform(&transform00, static_tf).is_ok());
+        let is_static = false;
+        assert!(tf_buffer.add_transform(&transform00, is_static).is_ok());
         assert_eq!(tf_buffer.child_transform_index.len(), 1);
         assert_eq!(tf_buffer.transform_data.len(), 1);
         assert!(tf_buffer.transform_data.contains_key(&transform0_key));
@@ -783,7 +783,7 @@ mod test {
             to_stamp(1, 0),
         );
 
-        assert!(tf_buffer.add_transform(&transform01, static_tf).is_ok());
+        assert!(tf_buffer.add_transform(&transform01, is_static).is_ok());
         assert_eq!(tf_buffer.child_transform_index.len(), 1);
         assert_eq!(tf_buffer.transform_data.len(), 1);
         assert!(tf_buffer.transform_data.contains_key(&transform0_key));
@@ -806,7 +806,7 @@ mod test {
             to_stamp(2, 0),
         );
 
-        assert!(tf_buffer.add_transform(&transform02, static_tf).is_ok());
+        assert!(tf_buffer.add_transform(&transform02, is_static).is_ok());
         assert_eq!(tf_buffer.child_transform_index.len(), 1);
         assert_eq!(tf_buffer.transform_data.len(), 1);
         assert!(tf_buffer.transform_data.contains_key(&transform0_key));

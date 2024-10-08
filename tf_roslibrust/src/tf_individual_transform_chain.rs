@@ -16,7 +16,7 @@ pub(crate) struct TfIndividualTransformChain {
     parent: String,
     child: String,
     cache_duration: TimeDelta,
-    static_tf: bool,
+    is_static: bool,
     // TODO(lucasw) store frame_id and child_frame_id here, and just a Transform in the map
     pub(crate) transform_chain: BTreeMap<TimeDelta, TransformStamped>,
 }
@@ -25,7 +25,7 @@ impl TfIndividualTransformChain {
     pub(crate) fn new(
         parent: String,
         child: String,
-        static_tf: bool,
+        is_static: bool,
         cache_duration: TimeDelta,
     ) -> Self {
         // TODO(lucasw) have an enum type for static and non-static?
@@ -34,7 +34,7 @@ impl TfIndividualTransformChain {
             child,
             cache_duration,
             transform_chain: BTreeMap::new(),
-            static_tf,
+            is_static,
         }
     }
 
@@ -53,7 +53,7 @@ impl TfIndividualTransformChain {
     // TODO(lucasw) pass in a TimeDelta which is latest - cache_duration across entire tf buffer
     // then won't have old transforms linger
     pub(crate) fn add_to_buffer(&mut self, msg: TransformStamped) {
-        if self.static_tf {
+        if self.is_static {
             let mut tfs = msg.clone();
             // TODO(lucasw) tried to get rid of the magic 0, 0 static value but here it is again
             let time = TimeDelta::new(0, 0).unwrap();
@@ -85,7 +85,7 @@ impl TfIndividualTransformChain {
             panic!("no transforms available");
         }
         // TODO(lucasw) or just have a get_most_recent_transform()
-        if stamp.is_none() || self.static_tf {
+        if stamp.is_none() || self.is_static {
             // println!("return latest");
             // TODO(lucasw) don't really want to use the timestamp of this if it is static
             let key_value = self.transform_chain.last_key_value();
@@ -161,8 +161,8 @@ impl TfIndividualTransformChain {
                 let first_transform = self.transform_chain.first_key_value().unwrap().1;
                 return Err(TfError::AttemptedLookupInPast(
                     format!(
-                        "{} -> {}, first stamp is after query:",
-                        self.parent, self.child
+                        "{} -> {}, static: {}, first stamp is after query:",
+                        self.parent, self.child, self.is_static,
                     ),
                     first_transform.header.stamp.clone(),
                     stamp,
@@ -179,8 +179,8 @@ impl TfIndividualTransformChain {
                 let last_transform = self.transform_chain.last_key_value().unwrap().1;
                 return Err(TfError::AttemptedLookupInFuture(
                     format!(
-                        "{} -> {}, last stamp is before query:",
-                        self.parent, self.child
+                        "{} -> {}, static: {}, last stamp is before query:",
+                        self.parent, self.child, self.is_static,
                     ),
                     last_transform.header.stamp.clone(),
                     stamp,
@@ -214,7 +214,7 @@ impl TfIndividualTransformChain {
             return false;
         }
 
-        if self.static_tf {
+        if self.is_static {
             return true;
         }
 
