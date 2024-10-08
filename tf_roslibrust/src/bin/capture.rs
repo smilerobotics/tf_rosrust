@@ -37,7 +37,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
     print!(
         "# {:.3} getting transforms...",
-        tf_util::stamp_to_f64(tf_util::stamp_now())
+        tf_util::stamp_to_f64(&tf_util::stamp_now())
     );
     let listener = tf_roslibrust::TfListener::new(&nh).await;
 

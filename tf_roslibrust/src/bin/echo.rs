@@ -44,6 +44,7 @@ async fn main() -> Result<(), anyhow::Error> {
         tokio::signal::ctrl_c().await.unwrap();
         // TODO(lucasw) give the msg receiver thread a chance to cleanly finish the mcap
         println!("ctrl-c, exiting");
+        tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
         std::process::exit(0);
     });
 
@@ -70,7 +71,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 // let tdiff = tf_util::duration_to_f64(t1 - t0);
                 // println!("lookup time {:?}s", t1 - t0);
                 let t1 = tf_util::duration_to_f64(t1);
-                let lookup_time = tf_util::stamp_to_f64(tf.header.stamp);
+                let lookup_time = tf_util::stamp_to_f64(&tf.header.stamp);
                 println!(
                     "\nAt time {lookup_time:.3}, (current time {t1:.3}, {:.3}s old)",
                     t1 - lookup_time

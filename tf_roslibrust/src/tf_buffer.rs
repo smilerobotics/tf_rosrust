@@ -1242,4 +1242,63 @@ mod test {
         );
         assert_eq!(result.unwrap().transform.translation, translation);
     }
+
+    #[test]
+    fn test_long_dynamic_buffer() {
+        let dt = 0.1;
+        let num_secs = 200;
+        let mut tf_buffer = TfBuffer::new_with_duration(TimeDelta::new(num_secs, 0).unwrap());
+
+        let translation = Vector3 {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+        };
+
+        let stamp = Time {
+            secs: 1_002_003_000,
+            nsecs: 0,
+        };
+        let mut tfs = TransformStamped {
+            header: Header {
+                frame_id: "base".to_string(),
+                stamp: stamp.clone(),
+                seq: 1,
+            },
+            child_frame_id: "leaf".to_string(),
+            transform: Transform {
+                rotation: Quaternion {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 0.0,
+                    w: 1.0,
+                },
+                translation: translation.clone(),
+            },
+        };
+
+        use crate::tf_util;
+
+        let num_steps = (num_secs as f64 / dt) as u32;
+        for i in 0..num_steps {
+            // set a time and position offset to the same value
+            let offset = i as f64 * dt;
+            tfs.header.stamp = tf_util::f64_to_stamp(tf_util::stamp_to_f64(&stamp) + offset);
+            tfs.transform.translation.x = offset;
+            let is_static = false;
+            // println!("[{i}] {offset} {:?} {:?}", tf_util::stamp_to_f64(&stamp), tfs.header.stamp);
+            let rv = tf_buffer.add_transform(&tfs, is_static);
+            assert!(rv.is_ok(), "[i] {offset:.2} {rv:?}");
+        }
+        for i in 0..num_steps - 1 {
+            let offset = i as f64 * dt + dt * 0.5;
+            let stamp = tf_util::f64_to_stamp(tf_util::stamp_to_f64(&stamp) + offset);
+            let rv = tf_buffer.lookup_transform("base", "leaf", Some(stamp.clone()));
+            assert!(rv.is_ok(), "[{i}], offset: {offset}, error: {rv:?}");
+            let tfs = rv.unwrap();
+            let translation = tfs.transform.translation;
+            let diff = translation.x - offset;
+            assert!(diff.abs() < 0.001, "[{i}] ({diff:.1}).abs() !< 0.001, translation: {translation:?}, offset {offset:.1}, {stamp:?}");
+        }
+    }
 }

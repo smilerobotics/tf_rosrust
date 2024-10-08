@@ -22,19 +22,32 @@ pub fn duration_to_stamp(time: TimeDelta) -> Time {
     to_stamp(time.num_seconds() as u32, time.subsec_nanos() as u32)
 }
 
+pub fn f64_to_stamp(seconds: f64) -> roslibrust_codegen::Time {
+    let secs = seconds as u32;
+    let nsecs = ((seconds - secs as f64) * 1e9) as u32;
+    to_stamp(secs, nsecs)
+}
+
 pub fn stamp_now() -> roslibrust_codegen::Time {
     duration_to_stamp(duration_now())
 }
 
 pub fn stamp_to_duration(stamp: &Time) -> TimeDelta {
-    TimeDelta::new(stamp.secs.into(), stamp.nsecs).unwrap()
+    // TODO(lucasw) if a stamp is manually created it could have nsecs > 1e9
+    let mut secs = stamp.secs;
+    // if nsecs > 1e9 the timedelta will fail
+    let mut nsecs = stamp.nsecs;
+    let nsecs_per_sec = 1e9 as u32;
+    secs += nsecs / nsecs_per_sec;
+    nsecs %= nsecs_per_sec;
+    TimeDelta::new(secs.into(), nsecs).unwrap_or_else(|| panic!("secs: {secs} nsecs: {nsecs}"))
 }
 
 pub fn duration_to_f64(time: TimeDelta) -> f64 {
     time.num_seconds() as f64 + (time.subsec_nanos() as f64 / 1e9)
 }
 
-pub fn stamp_to_f64(stamp: Time) -> f64 {
+pub fn stamp_to_f64(stamp: &Time) -> f64 {
     stamp.secs as f64 + (stamp.nsecs as f64) / 1e9
 }
 
@@ -172,4 +185,23 @@ pub fn tf2tf(
         tfs.transform.rotation.w = 1.0;
     }
     Ok(tfs)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_time_conversion() {
+        let base_stamp = Time {
+            secs: 1_002_003_000,
+            nsecs: 0,
+        };
+
+        for i in 0..1000 {
+            let offset = i as f64 * 0.1;
+            // see if there's a panic within this
+            let _stamp = f64_to_stamp(stamp_to_f64(&base_stamp) + offset);
+        }
+    }
 }
