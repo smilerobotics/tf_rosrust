@@ -106,7 +106,11 @@ impl TfListener {
                     // write batches of up to 50 transforms
                     let mut buffer_writer = buffer_for_writing.write().unwrap();
                     for (tfm, is_static) in tfms {
-                        buffer_writer.handle_incoming_transforms(tfm, is_static);
+                        let rv = buffer_writer.handle_incoming_transforms(tfm, is_static);
+                        if rv.is_err() {
+                            // TODO(lucasw) may want to throttle this down
+                            println!("{rv:?}");
+                        }
                     }
                 }
 

@@ -13,6 +13,8 @@ pub(crate) struct TfIndividualTransformChain {
     // TODO(lucasw) it looks like every individual transform has a cache duration,
     // so old transforms could hang around indefintely if no new ones are received with that
     // parent-child?
+    parent: String,
+    child: String,
     cache_duration: TimeDelta,
     static_tf: bool,
     // TODO(lucasw) store frame_id and child_frame_id here, and just a Transform in the map
@@ -20,9 +22,16 @@ pub(crate) struct TfIndividualTransformChain {
 }
 
 impl TfIndividualTransformChain {
-    pub(crate) fn new(static_tf: bool, cache_duration: TimeDelta) -> Self {
+    pub(crate) fn new(
+        parent: String,
+        child: String,
+        static_tf: bool,
+        cache_duration: TimeDelta,
+    ) -> Self {
         // TODO(lucasw) have an enum type for static and non-static?
         Self {
+            parent,
+            child,
             cache_duration,
             transform_chain: BTreeMap::new(),
             static_tf,
@@ -149,9 +158,14 @@ impl TfIndividualTransformChain {
                     duration_to_f64(time),
                     keys.len()
                 );
+                let first_transform = self.transform_chain.first_key_value().unwrap().1;
                 return Err(TfError::AttemptedLookupInPast(
+                    format!(
+                        "{} -> {}, first stamp is after query:",
+                        self.parent, self.child
+                    ),
+                    first_transform.header.stamp.clone(),
                     stamp,
-                    Box::new(self.transform_chain.first_key_value().unwrap().1.clone()),
                 ));
             } else if time == last_key {
                 // TODO(lucasw) fill this in, as it is the lookup will fail if equal to the final stamp
@@ -162,8 +176,13 @@ impl TfIndividualTransformChain {
                 // let ros_msg = to_transform_stamped(tf1.transform, header.frame_id, child_frame_id, stamp);
                 return Ok(tf1);
             } else if time > last_key {
-                return Err(TfError::AttemptedLookUpInFuture(
-                    Box::new(self.transform_chain.last_key_value().unwrap().1.clone()),
+                let last_transform = self.transform_chain.last_key_value().unwrap().1;
+                return Err(TfError::AttemptedLookupInFuture(
+                    format!(
+                        "{} -> {}, last stamp is before query:",
+                        self.parent, self.child
+                    ),
+                    last_transform.header.stamp.clone(),
                     stamp,
                 ));
             }

@@ -44,39 +44,71 @@ impl TfBuffer {
         }
     }
 
-    pub fn handle_incoming_transforms(&mut self, transforms: TFMessage, static_tf: bool) {
+    pub fn handle_incoming_transforms(
+        &mut self,
+        transforms: TFMessage,
+        static_tf: bool,
+    ) -> Result<(), TfError> {
         for transform in transforms.transforms {
-            self.add_transform(&transform, static_tf);
+            self.add_transform(&transform, static_tf)?;
         }
+        Ok(())
     }
 
     // don't detect loops here on the assumption that the transforms are arriving
     // much faster than lookup are occuring, so only detect loops in a lookup
-    pub fn add_transform(&mut self, transform: &TransformStamped, is_static_tf: bool) {
+    pub fn add_transform(
+        &mut self,
+        transform: &TransformStamped,
+        is_static_tf: bool,
+    ) -> Result<(), TfError> {
         // TODO(lucasw) need to retire transforms from this index when they expire
-        self.parent_transform_index.insert(
-            transform.child_frame_id.clone(),
-            transform.header.frame_id.clone(),
-        );
+        // TODO(lucasw) if this child has a different parent should error or warn
+        let parent = &transform.header.frame_id;
+        let child = &transform.child_frame_id;
+
+        let existing_parent = self.parent_transform_index.get(child);
+        match existing_parent {
+            None => {
+                self.parent_transform_index
+                    .insert(child.clone(), parent.clone());
+            }
+            Some(existing_parent) => {
+                // TODO(lucasw) will this comparison slow everything down much when there are lots
+                // of transforms?
+                if *existing_parent != *parent {
+                    return Err(TfError::ChangingParent(
+                        child.clone(),
+                        parent.clone(),
+                        existing_parent.clone(),
+                    ));
+                }
+            }
+        }
 
         self.child_transform_index
-            .entry(transform.header.frame_id.clone())
+            .entry(parent.clone())
             .or_default()
-            .insert(transform.child_frame_id.clone());
+            .insert(child.clone());
 
         let key = TfGraphNode {
-            child: transform.child_frame_id.clone(),
-            parent: transform.header.frame_id.clone(),
+            child: child.clone(),
+            parent: parent.clone(),
         };
 
+        // TODO(lucasw) return error if the existing chain static != is_static_tf
         match self.transform_data.entry(key) {
             Entry::Occupied(e) => e.into_mut(),
             Entry::Vacant(e) => e.insert(TfIndividualTransformChain::new(
+                parent.clone(),
+                child.clone(),
                 is_static_tf,
                 self.cache_duration,
             )),
         }
         .add_to_buffer(transform.clone());
+
+        Ok(())
     }
 
     pub fn get_parent_to_children(&self) -> HashMap<String, HashSet<String>> {
@@ -413,7 +445,7 @@ mod test {
                 },
             },
         };
-        buffer.add_transform(&world_to_item, true);
+        let _ = buffer.add_transform(&world_to_item, true);
         // buffer.add_transform(&get_inverse(&world_to_item), true);
 
         let world_to_base_link = TransformStamped {
@@ -440,7 +472,7 @@ mod test {
                 },
             },
         };
-        buffer.add_transform(&world_to_base_link, false);
+        let _ = buffer.add_transform(&world_to_base_link, false);
         // buffer.add_transform(&get_inverse(&world_to_base_link), false);
 
         let base_link_to_camera = TransformStamped {
@@ -467,7 +499,7 @@ mod test {
                 },
             },
         };
-        buffer.add_transform(&base_link_to_camera, true);
+        let _ = buffer.add_transform(&base_link_to_camera, true);
         // buffer.add_transform(&get_inverse(&base_link_to_camera), true);
     }
 
@@ -643,7 +675,7 @@ mod test {
         };
 
         let static_tf = false;
-        tf_buffer.add_transform(&transform00, static_tf);
+        assert!(tf_buffer.add_transform(&transform00, static_tf).is_ok());
         assert_eq!(tf_buffer.child_transform_index.len(), 1);
         assert!(tf_buffer.child_transform_index.contains_key(PARENT));
 
@@ -657,7 +689,7 @@ mod test {
         assert!(data.is_some());
         assert_eq!(data.unwrap().transform_chain.len(), 1);
 
-        tf_buffer.add_transform(&transform01, static_tf);
+        assert!(tf_buffer.add_transform(&transform01, static_tf).is_ok());
         assert_eq!(tf_buffer.child_transform_index.len(), 1);
         assert!(tf_buffer.child_transform_index.contains_key(PARENT));
 
@@ -675,8 +707,8 @@ mod test {
         let static_tf = true;
         // a static transform chain will always be length 0, the latest overwrites the earlier one
         // (regardless of timestamp in the transform, it's set to zero internally anyhow)
-        tf_buffer.add_transform(&transform10, static_tf);
-        tf_buffer.add_transform(&transform11, static_tf);
+        assert!(tf_buffer.add_transform(&transform10, static_tf).is_ok());
+        assert!(tf_buffer.add_transform(&transform11, static_tf).is_ok());
         assert_eq!(tf_buffer.child_transform_index.len(), 1);
         assert!(tf_buffer.child_transform_index.contains_key(PARENT));
 
@@ -733,7 +765,7 @@ mod test {
         };
 
         let static_tf = false;
-        tf_buffer.add_transform(&transform00, static_tf);
+        assert!(tf_buffer.add_transform(&transform00, static_tf).is_ok());
         assert_eq!(tf_buffer.child_transform_index.len(), 1);
         assert_eq!(tf_buffer.transform_data.len(), 1);
         assert!(tf_buffer.transform_data.contains_key(&transform0_key));
@@ -751,7 +783,7 @@ mod test {
             to_stamp(1, 0),
         );
 
-        tf_buffer.add_transform(&transform01, static_tf);
+        assert!(tf_buffer.add_transform(&transform01, static_tf).is_ok());
         assert_eq!(tf_buffer.child_transform_index.len(), 1);
         assert_eq!(tf_buffer.transform_data.len(), 1);
         assert!(tf_buffer.transform_data.contains_key(&transform0_key));
@@ -774,7 +806,7 @@ mod test {
             to_stamp(2, 0),
         );
 
-        tf_buffer.add_transform(&transform02, static_tf);
+        assert!(tf_buffer.add_transform(&transform02, static_tf).is_ok());
         assert_eq!(tf_buffer.child_transform_index.len(), 1);
         assert_eq!(tf_buffer.transform_data.len(), 1);
         assert!(tf_buffer.transform_data.contains_key(&transform0_key));
@@ -814,6 +846,7 @@ mod test {
 
     /// TODO(lucasw) this reparenting isn't supported currently, have to wait for old
     /// transforms to fall out of buffer
+    /// TODO(lucasw) update- I've made this an error
     /// Tests a case in which the tree structure changes dynamically
     /// time 1-2(sec): [base] -> [camera1] -> [marker] -> [target]
     /// time 3-4(sec): [base] -> [camera2] -> [marker] -> [target]
@@ -823,12 +856,12 @@ mod test {
         let mut tf_buffer = TfBuffer::new();
 
         let base_to_camera1 = TransformStamped {
-            child_frame_id: "camera1".to_string(),
             header: Header {
                 frame_id: "base".to_string(),
                 stamp: Time { secs: 1, nsecs: 0 },
                 seq: 1,
             },
+            child_frame_id: "camera1".to_string(),
             transform: Transform {
                 rotation: Quaternion {
                     x: 0.0,
@@ -843,15 +876,15 @@ mod test {
                 },
             },
         };
-        tf_buffer.add_transform(&base_to_camera1, true);
+        assert!(tf_buffer.add_transform(&base_to_camera1, true).is_ok());
 
         let base_to_camera2 = TransformStamped {
-            child_frame_id: "camera2".to_string(),
             header: Header {
                 frame_id: "base".to_string(),
                 stamp: Time { secs: 1, nsecs: 0 },
                 seq: 1,
             },
+            child_frame_id: "camera2".to_string(),
             transform: Transform {
                 rotation: Quaternion {
                     x: 0.0,
@@ -866,15 +899,15 @@ mod test {
                 },
             },
         };
-        tf_buffer.add_transform(&base_to_camera2, true);
+        assert!(tf_buffer.add_transform(&base_to_camera2, true).is_ok());
 
         let marker_to_target = TransformStamped {
-            child_frame_id: "target".to_string(),
             header: Header {
                 frame_id: "marker".to_string(),
                 stamp: Time { secs: 1, nsecs: 0 },
                 seq: 1,
             },
+            child_frame_id: "target".to_string(),
             transform: Transform {
                 rotation: Quaternion {
                     x: 0.0,
@@ -889,15 +922,15 @@ mod test {
                 },
             },
         };
-        tf_buffer.add_transform(&marker_to_target, true);
+        assert!(tf_buffer.add_transform(&marker_to_target, true).is_ok());
 
         let mut camera1_to_marker = TransformStamped {
-            child_frame_id: "marker".to_string(),
             header: Header {
                 frame_id: "camera1".to_string(),
                 stamp: Time { secs: 4, nsecs: 0 },
                 seq: 1,
             },
+            child_frame_id: "marker".to_string(),
             transform: Transform {
                 rotation: Quaternion {
                     x: 0.0,
@@ -912,20 +945,20 @@ mod test {
                 },
             },
         };
-        tf_buffer.add_transform(&camera1_to_marker, false);
+        assert!(tf_buffer.add_transform(&camera1_to_marker, false).is_ok());
 
         camera1_to_marker.header.stamp.secs = 30;
         camera1_to_marker.header.seq += 1;
         camera1_to_marker.transform.translation.y = -1.0;
-        tf_buffer.add_transform(&camera1_to_marker, false);
+        assert!(tf_buffer.add_transform(&camera1_to_marker, false).is_ok());
 
         let mut camera2_to_marker = TransformStamped {
-            child_frame_id: "marker".to_string(),
             header: Header {
                 frame_id: "camera2".to_string(),
                 stamp: Time { secs: 30, nsecs: 0 },
                 seq: 1,
             },
+            child_frame_id: "marker".to_string(),
             transform: Transform {
                 rotation: Quaternion {
                     x: 0.0,
@@ -940,23 +973,32 @@ mod test {
                 },
             },
         };
-        tf_buffer.add_transform(&camera2_to_marker, false);
+        assert!(tf_buffer.add_transform(&camera2_to_marker, false).is_err());
 
         camera2_to_marker.header.stamp.secs = 40;
         camera2_to_marker.header.seq += 1;
         camera2_to_marker.transform.translation.y = -10.0;
-        tf_buffer.add_transform(&camera2_to_marker, false);
+        assert!(tf_buffer.add_transform(&camera2_to_marker, false).is_err());
 
         // TODO(lucasw) there is a rotation here that flips the y direction
+        let rv = tf_buffer.lookup_transform("base", "target", Some(Time { secs: 37, nsecs: 0 }));
+        //.unwrap();
+        // assert!((tf.transform.translation.y - -1.0).abs() < 0.01, "base -> target {:?}", tf.transform.translation);
+        // TODO(lucasw)
+        match rv {
+            // this is what is expected
+            Err(TfError::AttemptedLookupInFuture(_, _, _)) => assert!(true),
+            _ => assert!(false),
+        }
+
         let tf = tf_buffer
-            .lookup_transform("base", "target", Some(Time { secs: 37, nsecs: 0 }))
+            .lookup_transform("camera1", "marker", Some(Time { secs: 30, nsecs: 0 }))
             .unwrap();
-        assert!((tf.transform.translation.y - 4.0).abs() < 0.01);
-        let tf = tf_buffer
-            .lookup_transform("camera2", "marker", Some(Time { secs: 37, nsecs: 0 }))
-            .unwrap();
-        // println!("{:?}", tf);
-        assert!((tf.transform.translation.y - -4.0).abs() < 0.01);
+        assert!(
+            (tf.transform.translation.y - -1.0).abs() < 0.01,
+            "{:?}",
+            tf.transform.translation
+        );
 
         // TODO(lucasw) update these lookups to be valid
         /*
@@ -1051,12 +1093,12 @@ mod test {
         camera1_to_marker.header.seq += 1;
         camera1_to_marker.transform.translation.x = 0.5;
         camera1_to_marker.transform.translation.y = 1.0;
-        tf_buffer.add_transform(&camera1_to_marker, false);
+        assert!(tf_buffer.add_transform(&camera1_to_marker, false).is_ok());
 
         camera1_to_marker.header.stamp.secs += 10;
         camera1_to_marker.header.seq += 1;
         camera1_to_marker.transform.translation.y = -1.0;
-        tf_buffer.add_transform(&camera1_to_marker, false);
+        assert!(tf_buffer.add_transform(&camera1_to_marker, false).is_ok());
 
         let result =
             tf_buffer.lookup_transform("base", "target", Some(Time { secs: 55, nsecs: 0 }));
@@ -1090,5 +1132,114 @@ mod test {
                 z: 0.0
             }
         );
+    }
+
+    #[test]
+    fn test_changing_parents() {
+        let mut tf_buffer = TfBuffer::new_with_duration(TimeDelta::new(200, 0).unwrap());
+
+        let translation = Vector3 {
+            x: 1.0,
+            y: -0.7,
+            z: 3.0,
+        };
+
+        let stamp = crate::tf_util::stamp_now();
+        let tfs = TransformStamped {
+            header: Header {
+                frame_id: "base".to_string(),
+                stamp: stamp.clone(),
+                seq: 1,
+            },
+            child_frame_id: "leaf".to_string(),
+            transform: Transform {
+                rotation: Quaternion {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 0.0,
+                    w: 1.0,
+                },
+                translation: translation.clone(),
+            },
+        };
+
+        let is_static = true;
+        let rv = tf_buffer.add_transform(&tfs, is_static);
+        assert!(rv.is_ok());
+
+        let tfs = TransformStamped {
+            header: Header {
+                frame_id: "other_base".to_string(),
+                stamp: stamp.clone(),
+                seq: 1,
+            },
+            child_frame_id: "leaf".to_string(),
+            transform: Transform {
+                rotation: Quaternion {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 0.0,
+                    w: 1.0,
+                },
+                translation: translation.clone(),
+            },
+        };
+
+        let rv = tf_buffer.add_transform(&tfs, is_static);
+        assert!(rv.is_err());
+    }
+
+    #[test]
+    fn test_long_buffer() {
+        let mut tf_buffer = TfBuffer::new_with_duration(TimeDelta::new(200, 0).unwrap());
+
+        let translation = Vector3 {
+            x: 1.0,
+            y: -0.7,
+            z: 3.0,
+        };
+
+        let stamp = crate::tf_util::stamp_now();
+        let tfs = TransformStamped {
+            header: Header {
+                frame_id: "base".to_string(),
+                stamp: stamp.clone(),
+                seq: 1,
+            },
+            child_frame_id: "leaf".to_string(),
+            transform: Transform {
+                rotation: Quaternion {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 0.0,
+                    w: 1.0,
+                },
+                translation: translation.clone(),
+            },
+        };
+
+        let is_static = true;
+        assert!(tf_buffer.add_transform(&tfs, is_static).is_ok());
+
+        let result = tf_buffer.lookup_transform("base", "leaf", Some(Time { secs: 51, nsecs: 0 }));
+        assert_eq!(result.unwrap().transform.translation, translation);
+        let result = tf_buffer.lookup_transform(
+            "base",
+            "leaf",
+            Some(Time {
+                secs: stamp.secs,
+                nsecs: 0,
+            }),
+        );
+        assert_eq!(result.unwrap().transform.translation, translation);
+        let result = tf_buffer.lookup_transform(
+            "base",
+            "leaf",
+            Some(Time {
+                secs: stamp.secs + 1000,
+                nsecs: 0,
+            }),
+        );
+        assert_eq!(result.unwrap().transform.translation, translation);
     }
 }
