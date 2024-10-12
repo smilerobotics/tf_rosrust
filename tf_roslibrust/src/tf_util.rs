@@ -201,10 +201,10 @@ pub fn tf2tf(
 /// use for loading from a toml
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Tf2TfConfig {
-    lookup_parent: String,
-    lookup_child: String,
-    broadcast_parent: String,
-    broadcast_child: String,
+    pub lookup_parent: String,
+    pub lookup_child: String,
+    pub broadcast_parent: String,
+    pub broadcast_child: String,
     // set these to 0.0 to accomplish the same thing as zero_x/y/z/etc. above
     fixed_x: Option<f64>,
     fixed_y: Option<f64>,
