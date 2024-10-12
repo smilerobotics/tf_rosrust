@@ -288,6 +288,18 @@ impl TfBuffer {
         Ok(tf_list)
     }
 
+    pub fn get_rate(&self, child_frame: &str) -> Option<f64> {
+        // get key by child, there should only be one (is that gauranteed elsewhere?)
+        for (pair, chain) in &self.transform_data {
+            if pair.child == *child_frame {
+                return chain.get_rate();
+            }
+        }
+        // TODO(lucasw) return an error if the frame doesn't exist as a child
+        // println!("child frame {child_frame} not in tf buffer");
+        None
+    }
+
     // debug the tf chains
     pub fn print_chains(&self) {
         // transform_data: HashMap<TfGraphNode, TfIndividualTransformChain>,

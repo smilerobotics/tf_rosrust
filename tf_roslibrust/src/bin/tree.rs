@@ -1,5 +1,5 @@
 use std::collections::{HashMap, HashSet};
-use tf_roslibrust::TfListener;
+use tf_roslibrust::{TfBuffer, TfListener};
 
 roslibrust_codegen_macro::find_and_generate_ros_messages!();
 
@@ -7,6 +7,7 @@ roslibrust_codegen_macro::find_and_generate_ros_messages!();
 /// adapted from tf_demo tf_tree.py
 
 fn print_tree(
+    tf_buffer: &TfBuffer,
     parent_to_children: &HashMap<String, HashSet<String>>,
     parent: &str,
     level: u8,
@@ -19,14 +20,22 @@ fn print_tree(
     if level > 0 {
         print!("-- ");
     }
-    println!("{parent}");
+
+    print!("{parent}");
+    let rate = tf_buffer.get_rate(parent);
+    if let Some(rate) = rate {
+        if rate > 0.0 {
+            print!("  {rate:.2}Hz");
+        }
+    }
+    println!();
 
     match parent_to_children.get(parent) {
         Some(children) => {
             let mut children = children.iter().collect::<Vec<_>>();
             children.sort();
             for child in children {
-                let _ = print_tree(parent_to_children, child, level + 1);
+                let _ = print_tree(tf_buffer, parent_to_children, child, level + 1);
             }
         }
         None => {
@@ -86,7 +95,7 @@ async fn main() -> Result<(), anyhow::Error> {
         let roots = buffer.get_roots()?;
         for root in roots {
             println!("[");
-            let _ = print_tree(&parent_to_children, &root, 0);
+            let _ = print_tree(&buffer, &parent_to_children, &root, 0);
             println!("]");
         }
     }

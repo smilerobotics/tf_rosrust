@@ -236,6 +236,22 @@ impl TfIndividualTransformChain {
     }
     */
 
+    pub fn get_rate(&self) -> Option<f64> {
+        let rv0 = self.transform_chain.first_key_value();
+        let rv1 = self.transform_chain.last_key_value();
+        if let Some((first_key, _)) = rv0 {
+            if let Some((last_key, _)) = rv1 {
+                let num = self.transform_chain.len();
+                if num > 1 {
+                    let time_diff = duration_to_f64(*last_key - *first_key);
+                    return Some(num as f64 / time_diff);
+                }
+                return Some(0.0);
+            }
+        }
+        None
+    }
+
     /// debug print the chain, could make this the proper Debug output
     pub fn print(&self) {
         let rv0 = self.transform_chain.first_key_value();
