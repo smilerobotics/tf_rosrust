@@ -59,3 +59,7 @@ path = "src/bin/echo.rs"
 [[bin]]
 name = "tf_publisher"
 path = "src/bin/publisher.rs"
+
+[[bin]]
+name = "tf2tfs"
+path = "src/bin/tf2tfs.rs"

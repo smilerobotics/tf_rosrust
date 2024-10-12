@@ -1,0 +1,7 @@
+[[tf2tf]]
+lookup_parent = "test0"
+lookup_child = "test1"
+broadcast_parent = "test0"
+broadcast_child = "test1_zeroed"
+fixed_roll = 1.0
+fixed_pitch = 0.0

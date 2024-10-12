@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::time::SystemTime;
 
 use crate::transforms::{geometry_msgs, tf2_msgs};
-use crate::LookupTransform;
+use crate::{tf_error::TfError, LookupTransform};
 
 pub fn to_stamp(secs: u32, nsecs: u32) -> Time {
     roslibrust_codegen::Time { secs, nsecs }
@@ -65,13 +65,28 @@ struct TransformRaw {
     yaw: Option<f64>,
 }
 
+pub fn quat_msg_to_rpy(quat_msg: geometry_msgs::Quaternion) -> (f64, f64, f64) {
+    let quat = nalgebra::UnitQuaternion::new_normalize(nalgebra::geometry::Quaternion::new(
+        quat_msg.w, quat_msg.x, quat_msg.y, quat_msg.z,
+    ));
+    let (roll, pitch, yaw) = quat.euler_angles();
+    (roll, pitch, yaw)
+}
+
+pub fn rpy_to_quat_msg(roll: f64, pitch: f64, yaw: f64) -> geometry_msgs::Quaternion {
+    let unit_quat = nalgebra::UnitQuaternion::from_euler_angles(roll, pitch, yaw);
+    let quat = unit_quat.quaternion();
+    geometry_msgs::Quaternion {
+        x: quat.coords[0],
+        y: quat.coords[1],
+        z: quat.coords[2],
+        w: quat.coords[3],
+    }
+}
+
 impl TransformRaw {
     fn from_transform_stamped(tfs: geometry_msgs::TransformStamped) -> Self {
-        let rot = tfs.transform.rotation;
-        let quat = nalgebra::UnitQuaternion::new_normalize(nalgebra::geometry::Quaternion::new(
-            rot.w, rot.x, rot.y, rot.z,
-        ));
-        let (roll, pitch, yaw) = quat.euler_angles();
+        let (roll, pitch, yaw) = quat_msg_to_rpy(tfs.transform.rotation);
 
         let tr = tfs.transform.translation;
         let (x, y, z) = (tr.x, tr.y, tr.z);
@@ -140,12 +155,7 @@ pub fn get_transforms_from_toml(filename: &str) -> Result<tf2_msgs::TFMessage, a
         let pitch = tfr.pitch.unwrap_or(0.0);
         let yaw = tfr.yaw.unwrap_or(0.0);
 
-        let unit_quat = nalgebra::UnitQuaternion::from_euler_angles(roll, pitch, yaw);
-        let quat = unit_quat.quaternion();
-        transform.transform.rotation.x = quat.coords[0];
-        transform.transform.rotation.y = quat.coords[1];
-        transform.transform.rotation.z = quat.coords[2];
-        transform.transform.rotation.w = quat.coords[3];
+        transform.transform.rotation = rpy_to_quat_msg(roll, pitch, yaw);
 
         tfm.transforms.push(transform);
     }
@@ -186,6 +196,84 @@ pub fn tf2tf(
         tfs.transform.rotation.w = 1.0;
     }
     Ok(tfs)
+}
+
+/// use for loading from a toml
+#[derive(Deserialize, Serialize, Debug)]
+pub struct Tf2TfConfig {
+    lookup_parent: String,
+    lookup_child: String,
+    broadcast_parent: String,
+    broadcast_child: String,
+    // set these to 0.0 to accomplish the same thing as zero_x/y/z/etc. above
+    fixed_x: Option<f64>,
+    fixed_y: Option<f64>,
+    fixed_z: Option<f64>,
+    fixed_roll: Option<f64>,
+    fixed_pitch: Option<f64>,
+    fixed_yaw: Option<f64>,
+}
+
+pub fn get_tf2tf_from_toml(filename: &str) -> Result<Vec<Tf2TfConfig>, anyhow::Error> {
+    let contents = match std::fs::read_to_string(filename) {
+        Ok(contents) => contents,
+        // Handle the `error` case.
+        Err(err) => {
+            panic!("Could not read file '{filename}', {err}");
+        }
+    };
+    // println!("{contents}");
+    let mut tf2tf_data: HashMap<String, Vec<Tf2TfConfig>> = toml::from_str(&contents)?;
+    // println!("{tf2tf_data:?}");
+    tf2tf_data
+        .remove("tf2tf")
+        .ok_or(anyhow::anyhow!("no tf2tfs"))
+}
+
+pub fn tf2tf_to_tfm(
+    tf_lookup: &impl LookupTransform,
+    tf2tf_config: &Vec<Tf2TfConfig>,
+) -> (tf2_msgs::TFMessage, Vec<TfError>) {
+    let mut tfm = tf2_msgs::TFMessage::default();
+    let mut tf_errors = Vec::new();
+    for tf2tf in tf2tf_config {
+        // get the most recent parent child transform, zero out x,y,z and/or rotation
+        match tf_lookup.lookup_transform(&tf2tf.lookup_parent, &tf2tf.lookup_child, None) {
+            Err(error) => {
+                // if rv is error, continue on and get as many transforms as possible...
+                tf_errors.push(error);
+                continue;
+            }
+            Ok(mut tfs) => {
+                tfs.header.frame_id = tf2tf.broadcast_parent.clone();
+                tfs.child_frame_id = tf2tf.broadcast_child.clone();
+                if let Some(x) = tf2tf.fixed_x {
+                    tfs.transform.translation.x = x;
+                }
+                if let Some(y) = tf2tf.fixed_y {
+                    tfs.transform.translation.y = y;
+                }
+                if let Some(z) = tf2tf.fixed_z {
+                    tfs.transform.translation.z = z;
+                }
+
+                let (mut roll, mut pitch, mut yaw) = quat_msg_to_rpy(tfs.transform.rotation);
+                if let Some(fixed_roll) = tf2tf.fixed_roll {
+                    roll = fixed_roll;
+                }
+                if let Some(fixed_pitch) = tf2tf.fixed_pitch {
+                    pitch = fixed_pitch;
+                }
+                if let Some(fixed_yaw) = tf2tf.fixed_yaw {
+                    yaw = fixed_yaw;
+                }
+                tfs.transform.rotation = rpy_to_quat_msg(roll, pitch, yaw);
+
+                tfm.transforms.push(tfs);
+            }
+        }
+    }
+    (tfm, tf_errors)
 }
 
 #[cfg(test)]
