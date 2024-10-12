@@ -69,29 +69,32 @@ async fn main() -> Result<(), anyhow::Error> {
 
     // let some transforms arrive
     tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
+    // now done collecting
+    listener.force_finish();
 
     {
-        // TODO(lucasw) make tf listener stop listening
         let buffer = listener.buffer.read().unwrap();
-        let root = buffer.get_root()?;
-        println!("\n");
         let parent_to_children = buffer.get_parent_to_children();
-        {
+        if false {
             let mut keys_sorted = parent_to_children.keys().collect::<Vec<_>>();
             keys_sorted.sort();
             for parent in keys_sorted {
                 println!("{parent}: {:?}", parent_to_children.get(parent).unwrap());
             }
         }
-        let _ = print_tree(&parent_to_children, &root, 0);
+
+        let roots = buffer.get_roots()?;
+        for root in roots {
+            println!("[");
+            let _ = print_tree(&parent_to_children, &root, 0);
+            println!("]");
+        }
     }
 
     // TODO(lucasw) trying to get node to fully unregister
     println!("nh shutdown");
     let rv = nh.inner.shutdown();
     println!("nh shutdown {rv:?}");
-    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
-    listener.force_finish();
     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
     println!("done");
     Ok(())

@@ -152,14 +152,15 @@ impl TfBuffer {
         Ok((frame_lineage, frame_lineage_visited))
     }
 
-    pub fn get_root(&self) -> Result<String, TfError> {
-        let parent = self
-            .child_transform_index
-            .keys()
-            .next()
-            .ok_or(TfError::EmptyTree)?;
-        let (lineage, _) = self.get_path_to_root(parent)?;
-        lineage.last().cloned().ok_or(TfError::EmptyTree)
+    // there may be multple roots, get them all
+    pub fn get_roots(&self) -> Result<HashSet<String>, TfError> {
+        let mut roots = HashSet::new();
+        for parent in self.child_transform_index.keys() {
+            let (lineage, _) = self.get_path_to_root(parent)?;
+            let root = lineage.last().ok_or(TfError::EmptyTree)?;
+            roots.insert(root.clone());
+        }
+        Ok(roots)
     }
 
     /// Retrieves the transform path
