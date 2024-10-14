@@ -1,5 +1,5 @@
 ```
-ROS_PACKAGE_PATH=`rospack find geometry_msgs`:`rospack find tf2_msgs`:`rospack find std_msgs`:`rospack find actionlib_msgs` cargo build --release -p tf_roslibrust
+ROS_PACKAGE_PATH=`rospack find geometry_msgs`:`rospack find tf2_msgs`:`rospack find sensor_msgs`:`rospack find std_msgs`:`rospack find actionlib_msgs` cargo build --release -p tf_roslibrust
 ```
 
 https://github.com/Carter12s/roslibrust/discussions/177

@@ -57,7 +57,7 @@ jobs:
           sudo apt-get install -yqq libstd-srvs-dev python3-std-srvs ros-std-srvs
           sudo apt-get install -yqq libtf2-msgs-dev python3-tf2-msgs ros-tf2-msgs
           rospack find geometry_msgs
-          echo "ROS_PACKAGE_PATH=`rospack find geometry_msgs`:`rospack find tf2_msgs`:`rospack find std_msgs`:`rospack find actionlib_msgs`" >> $GITHUB_ENV
+          echo "ROS_PACKAGE_PATH=`rospack find geometry_msgs`:`rospack find tf2_msgs`:`rospack find sensor_msgs`:`rospack find std_msgs`:`rospack find actionlib_msgs`" >> $GITHUB_ENV
 
       - run: |
           ! [[ -z "$ROS_PACKAGE_PATH" ]]
