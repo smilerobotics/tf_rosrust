@@ -4,7 +4,8 @@ use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::SystemTime;
 
-use crate::transforms::{geometry_msgs, tf2_msgs};
+use crate::transforms::isometry_to_transform;
+use crate::transforms::{geometry_msgs, sensor_msgs, std_msgs, tf2_msgs};
 use crate::{tf_error::TfError, LookupTransform};
 
 pub fn to_stamp(secs: u32, nsecs: u32) -> Time {
@@ -292,6 +293,7 @@ pub struct JointConfig {
     axis_z: f64,
 }
 
+#[derive(Debug)]
 pub struct Joint {
     pub name: String,
     pub parent: String,
@@ -338,6 +340,79 @@ pub fn get_joints_from_toml(filename: &str) -> Result<HashMap<String, Joint>, an
     Ok(joints)
 }
 
+/// convert a JointState message to a hashmap with joint name keys
+pub fn joint_state_map(js: &sensor_msgs::JointState) -> HashMap<String, (f64, f64, f64)> {
+    let mut joints = HashMap::new();
+    for (ind, joint_name) in js.name.iter().enumerate() {
+        let position = {
+            if ind < js.position.len() {
+                js.position[ind]
+            } else {
+                0.0
+            }
+        };
+
+        let velocity = {
+            if ind < js.velocity.len() {
+                js.velocity[ind]
+            } else {
+                0.0
+            }
+        };
+
+        let effort = {
+            if ind < js.effort.len() {
+                js.effort[ind]
+            } else {
+                0.0
+            }
+        };
+
+        // TODO(lucasw) return error/s if duplicate names
+        joints.insert(joint_name.clone(), (position, velocity, effort));
+    }
+    joints
+}
+
+pub fn joint_states_to_tfm(
+    js: &sensor_msgs::JointState,
+    joints_config: &HashMap<String, Joint>,
+) -> Result<tf2_msgs::TFMessage, anyhow::Error> {
+    let joint_states = joint_state_map(js);
+    let mut tfm = tf2_msgs::TFMessage::default();
+    for (joint_name, (position, _velocity, _effort)) in joint_states {
+        let rv = joints_config.get(&joint_name);
+        match rv {
+            Some(joint) => {
+                let axis_angle = joint.axis.into_inner() * position;
+                let iso = nalgebra::Isometry3::new(
+                    nalgebra::base::Vector3::new(
+                        joint.translation.x,
+                        joint.translation.y,
+                        joint.translation.z,
+                    ),
+                    axis_angle,
+                );
+                let transform = isometry_to_transform(iso);
+                let tfs = geometry_msgs::TransformStamped {
+                    header: std_msgs::Header {
+                        frame_id: joint.parent.clone(),
+                        stamp: js.header.stamp.clone(),
+                        seq: js.header.seq,
+                    },
+                    child_frame_id: joint.child.clone(),
+                    transform,
+                };
+                tfm.transforms.push(tfs);
+            }
+            None => {
+                println!("no {joint_name} in joint config");
+            }
+        }
+    }
+    Ok(tfm)
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -353,6 +428,31 @@ mod test {
             let offset = i as f64 * 0.1;
             // see if there's a panic within this
             let _stamp = f64_to_stamp(stamp_to_f64(&base_stamp) + offset);
+        }
+    }
+
+    #[test]
+    fn test_joints() {
+        let config_file = format!("{}/examples/joints.toml", env!("CARGO_MANIFEST_DIR"));
+        let joints_config = get_joints_from_toml(&config_file).unwrap();
+
+        let header = std_msgs::Header::default();
+        let joint_state = sensor_msgs::JointState {
+            header,
+            name: vec![
+                "back_wheel_joint".into(),
+                "front_steer_joint".into(),
+                "front_wheel_joint".into(),
+            ],
+            position: vec![1.570792, 0.31459, 0.5236],
+            velocity: vec![],
+            effort: vec![],
+        };
+        let tfm = joint_states_to_tfm(&joint_state, &joints_config).unwrap();
+        assert_eq!(tfm.transforms.len(), 3);
+        // TODO(lucasw) could assert translations and rotations are as expected
+        for tfs in &tfm.transforms {
+            println!("{tfs:?}");
         }
     }
 }

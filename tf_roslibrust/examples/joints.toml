@@ -1,0 +1,26 @@
+# bicycle model
+# tf_from_joints tf_roslibrust/examples/joints.toml
+[[joint]]
+name = "back_wheel_joint"
+parent = "base_link"
+child = "back_wheel_base"
+axis_x = 0.0
+axis_y = 1.0
+axis_z = 0.0
+
+[[joint]]
+name = "front_steer_joint"
+parent = "base_link"
+child = "front_wheel"
+translation_x = 1.0
+axis_x = 0.0
+axis_y = 0.0
+axis_z = 1.0
+
+[[joint]]
+name = "front_wheel_joint"
+parent = "front_wheel_base"
+child = "front_wheel"
+axis_x = 0.0
+axis_y = 1.0
+axis_z = 0.0

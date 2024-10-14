@@ -1,44 +1,9 @@
-use std::collections::HashMap;
 use tf_roslibrust::tf_util;
-use tf_roslibrust::transforms::isometry_to_transform;
-use tf_roslibrust::transforms::{geometry_msgs, sensor_msgs, std_msgs, tf2_msgs};
+use tf_roslibrust::transforms::{sensor_msgs, tf2_msgs};
 
 /// Load a toml file of a list of joint names and their properties,
 /// subscribe to JointState topic and then publish the transforms
 /// tf_from_joints examples/joints.toml
-
-fn joint_state_map(js: &sensor_msgs::JointState) -> HashMap<String, (f64, f64, f64)> {
-    let mut joints = HashMap::new();
-    for (ind, joint_name) in js.name.iter().enumerate() {
-        let position = {
-            if ind < js.position.len() {
-                js.position[ind]
-            } else {
-                0.0
-            }
-        };
-
-        let velocity = {
-            if ind < js.velocity.len() {
-                js.velocity[ind]
-            } else {
-                0.0
-            }
-        };
-
-        let effort = {
-            if ind < js.effort.len() {
-                js.effort[ind]
-            } else {
-                0.0
-            }
-        };
-
-        // TODO(lucasw) return error/s if duplicate names
-        joints.insert(joint_name.clone(), (position, velocity, effort));
-    }
-    joints
-}
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
@@ -64,7 +29,10 @@ async fn main() -> Result<(), anyhow::Error> {
     // println!("{}", format!("full ns and node name: {full_node_name}"));
 
     let config_file = &args2[1];
-    let joints = tf_util::get_joints_from_toml(config_file)?;
+    let joints_config = tf_util::get_joints_from_toml(config_file)?;
+    for joint in &joints_config {
+        println!("{joint:?}");
+    }
 
     let nh = NodeHandle::new(&std::env::var("ROS_MASTER_URI")?, full_node_name)
         .await
@@ -94,40 +62,10 @@ async fn main() -> Result<(), anyhow::Error> {
     loop {
         let rv = js_subscriber.next().await;
         if let Some(Ok(js)) = rv {
-            let joint_states = joint_state_map(&js);
-            let mut tfm = tf2_msgs::TFMessage::default();
-            for (joint_name, (position, _velocity, _effort)) in joint_states {
-                let rv = joints.get(&joint_name);
-                match rv {
-                    Some(joint) => {
-                        // TODO(lucasw) try joint.translation here
-                        let axis_angle = joint.axis.into_inner() * position;
-                        let iso = nalgebra::Isometry3::new(
-                            nalgebra::base::Vector3::default(),
-                            axis_angle,
-                        );
-                        let mut transform = isometry_to_transform(iso);
-                        transform.translation.x = joint.translation.x;
-                        transform.translation.y = joint.translation.y;
-                        transform.translation.z = joint.translation.z;
-                        let tfs = geometry_msgs::TransformStamped {
-                            header: std_msgs::Header {
-                                frame_id: joint.parent.clone(),
-                                stamp: js.header.stamp.clone(),
-                                seq: js.header.seq,
-                            },
-                            child_frame_id: joint.child.clone(),
-                            transform,
-                        };
-                        tfm.transforms.push(tfs);
-                    }
-                    None => {
-                        println!("no {joint_name} in joint config");
-                    }
-                }
+            let tfm = tf_util::joint_states_to_tfm(&js, &joints_config);
+            if let Ok(tfm) = tfm {
+                tf_publisher.publish(&tfm).await?;
             }
-
-            tf_publisher.publish(&tfm).await?;
         }
     }
 
