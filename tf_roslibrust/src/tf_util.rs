@@ -276,6 +276,68 @@ pub fn tf2tf_to_tfm(
     (tfm, tf_errors)
 }
 
+/// use for loading joints from a toml
+#[derive(Deserialize, Serialize, Debug)]
+pub struct JointConfig {
+    name: String,
+    parent: String,
+    child: String,
+    // offset from parent before applying rotation, default all 0.0
+    translation_x: Option<f64>,
+    translation_y: Option<f64>,
+    translation_z: Option<f64>,
+    // axis to rotate around, will be normalized to length 1.0
+    axis_x: f64,
+    axis_y: f64,
+    axis_z: f64,
+}
+
+pub struct Joint {
+    pub name: String,
+    pub parent: String,
+    pub child: String,
+    // offset from parent before applying rotation, default all 0.0
+    pub translation: nalgebra::base::Vector3<f64>,
+    // axis to rotate around, will be normalized to length 1.0
+    // TODO(lucasw) if it wasn't normalized it would be a way to apply a scale factor to incoming
+    // joint state values
+    pub axis: nalgebra::base::UnitVector3<f64>,
+}
+
+pub fn get_joints_from_toml(filename: &str) -> Result<HashMap<String, Joint>, anyhow::Error> {
+    let contents = match std::fs::read_to_string(filename) {
+        Ok(contents) => contents,
+        Err(err) => {
+            panic!("Could not read joint file: '{filename}', {err}");
+        }
+    };
+    let mut joint_data: HashMap<String, Vec<JointConfig>> = toml::from_str(&contents)?;
+    let joint_data = joint_data
+        .remove("joint")
+        .ok_or(anyhow::anyhow!("no joints"))?;
+
+    let mut joints = HashMap::new();
+    for joint_config in joint_data {
+        let x = joint_config.translation_x.unwrap_or(0.0);
+        let y = joint_config.translation_y.unwrap_or(0.0);
+        let z = joint_config.translation_z.unwrap_or(0.0);
+        let axis_x = joint_config.axis_x;
+        let axis_y = joint_config.axis_y;
+        let axis_z = joint_config.axis_z;
+        let joint = Joint {
+            name: joint_config.name,
+            parent: joint_config.parent,
+            child: joint_config.child,
+            translation: nalgebra::Vector3::new(x, y, z),
+            axis: nalgebra::Unit::new_normalize(nalgebra::Vector3::new(axis_x, axis_y, axis_z)),
+        };
+        // return an error if multiple entries with the same joint name
+        // let _ = joints.try_insert(joint.name, joint)?;
+        let _ = joints.insert(joint.name.clone(), joint);
+    }
+    Ok(joints)
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
