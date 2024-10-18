@@ -57,6 +57,10 @@ name = "tf_echo"
 path = "src/bin/echo.rs"
 
 [[bin]]
+name = "tf_from_joints"
+path = "src/bin/tf_from_joints.rs"
+
+[[bin]]
 name = "tf_publisher"
 path = "src/bin/publisher.rs"
 
