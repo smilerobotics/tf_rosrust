@@ -1,3 +1,4 @@
+use roslibrust::ros1::NodeHandle;
 use tf_roslibrust::tf_util;
 use tf_roslibrust::transforms::tf2_msgs;
 use tf_roslibrust::LookupTransform;
@@ -8,7 +9,10 @@ use tf_roslibrust::LookupTransform;
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
-    use roslibrust::ros1::NodeHandle;
+    simple_logger::SimpleLogger::new()
+        .with_level(log::LevelFilter::Info)
+        .init()
+        .unwrap();
 
     // need to have leading slash on node name and topic to function properly
     // so figure out namespace then prefix it to name and topics
@@ -27,16 +31,16 @@ async fn main() -> Result<(), anyhow::Error> {
     }
 
     let full_node_name = &format!("/{ns}/tf_capture").replace("//", "/");
-    // println!("{}", format!("full ns and node name: {full_node_name}"));
+    // log::info!("{}", format!("full ns and node name: {full_node_name}"));
 
     let config_file = &args2[1];
     let old_tfm = tf_util::get_transforms_from_toml(config_file)?;
 
-    let nh = NodeHandle::new(&std::env::var("ROS_MASTER_URI")?, full_node_name)
+    let mut nh = NodeHandle::new(&std::env::var("ROS_MASTER_URI")?, full_node_name)
         .await
         .unwrap();
 
-    print!(
+    println!(
         "# {:.3} getting transforms...",
         tf_util::stamp_to_f64(&tf_util::stamp_now())
     );
@@ -55,7 +59,7 @@ async fn main() -> Result<(), anyhow::Error> {
             listener.lookup_transform(&old_tfs.header.frame_id, &old_tfs.child_frame_id, None);
         match res {
             Ok(new_tfs) => {
-                // println!("{new_tfs:?}");
+                // log::info!("{new_tfs:?}");
                 new_tfm.transforms.push(new_tfs);
                 // TODO(lucasw) compare old values to current values, warn if large
             }
@@ -68,6 +72,9 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let toml = tf_util::transforms_to_toml(new_tfm)?;
     print!("\n\n{toml}");
+
+    // manual cleanup
+    nh.unregister_all_subscribers().await;
 
     Ok(())
 }

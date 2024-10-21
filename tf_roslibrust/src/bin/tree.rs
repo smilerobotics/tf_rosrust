@@ -1,7 +1,6 @@
+use roslibrust::ros1::NodeHandle;
 use std::collections::{HashMap, HashSet};
 use tf_roslibrust::{TfBuffer, TfListener};
-
-roslibrust_codegen_macro::find_and_generate_ros_messages!();
 
 /// print the current tf tree
 /// adapted from tf_demo tf_tree.py
@@ -49,7 +48,10 @@ fn print_tree(
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
-    use roslibrust::ros1::NodeHandle;
+    simple_logger::SimpleLogger::new()
+        .with_level(log::LevelFilter::Info)
+        .init()
+        .unwrap();
 
     // need to have leading slash on node name and topic to function properly
     // so figure out namespace then prefix it to name and topics
@@ -70,18 +72,18 @@ async fn main() -> Result<(), anyhow::Error> {
     let full_node_name = &format!("/{ns}/tree").replace("//", "/");
     // println!("{}", format!("full ns and node name: {full_node_name}"));
 
-    let nh = NodeHandle::new(&std::env::var("ROS_MASTER_URI")?, full_node_name)
-        .await
-        .unwrap();
-
-    let listener = TfListener::new(&nh).await;
-
-    // let some transforms arrive
-    tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
-    // now done collecting
-    listener.force_finish();
-
     {
+        let nh = NodeHandle::new(&std::env::var("ROS_MASTER_URI")?, full_node_name)
+            .await
+            .unwrap();
+
+        let listener = TfListener::new(&nh).await;
+
+        // let some transforms arrive
+        tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
+        // now done collecting
+        listener.force_finish();
+
         let buffer = listener.buffer.read().unwrap();
         let parent_to_children = buffer.get_parent_to_children();
         if false {
@@ -100,11 +102,7 @@ async fn main() -> Result<(), anyhow::Error> {
         }
     }
 
-    // TODO(lucasw) trying to get node to fully unregister
-    println!("nh shutdown");
-    let rv = nh.inner.shutdown();
-    println!("nh shutdown {rv:?}");
-    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
-    println!("done");
+    // TODO(lucasw) wait for async unregistering
+    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
     Ok(())
 }

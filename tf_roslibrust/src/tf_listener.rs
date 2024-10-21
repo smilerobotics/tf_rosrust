@@ -53,7 +53,7 @@ impl TfListener {
                         let _ = dyn_tfm_sender.send((tfm, false));
                     }
                     Err(error) => {
-                        println!("dynamic tf sub error: {error}");
+                        log::info!("dynamic tf sub error: {error}");
                         break;
                     }
                 }
@@ -69,7 +69,7 @@ impl TfListener {
                         let _ = static_tfm_sender.send((tfm, true));
                     }
                     Err(error) => {
-                        println!("static tf sub error: {error}");
+                        log::info!("static tf sub error: {error}");
                         break;
                     }
                 }
@@ -109,7 +109,7 @@ impl TfListener {
                         let rv = buffer_writer.handle_incoming_transforms(tfm, is_static);
                         if rv.is_err() {
                             // TODO(lucasw) may want to throttle this down
-                            println!("{rv:?}");
+                            log::info!("{rv:?}");
                         }
                     }
                 }
@@ -137,11 +137,11 @@ impl TfListener {
 
     // TODO(lucasw) really need a integrated test for this
     pub fn force_finish(&self) {
-        println!("tf listener force finish");
+        log::info!("tf listener force finish");
         self.buffer_handle.abort();
         self.tf_handle.abort();
         self.tf_static_handle.abort();
-        println!("tf listener force finish done");
+        log::info!("tf listener force finish done");
     }
 }
 

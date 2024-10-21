@@ -1,3 +1,4 @@
+use roslibrust::ros1::NodeHandle;
 use tf_roslibrust::LookupTransform;
 use tf_roslibrust::{tf_util, TfListener};
 
@@ -8,7 +9,11 @@ roslibrust_codegen_macro::find_and_generate_ros_messages!();
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
-    use roslibrust::ros1::NodeHandle;
+    simple_logger::SimpleLogger::new()
+        .with_level(log::LevelFilter::Info)
+        // .without_timestamps() // required for running wsl2
+        .init()
+        .unwrap();
 
     // need to have leading slash on node name and topic to function properly
     // so figure out namespace then prefix it to name and topics
@@ -25,13 +30,12 @@ async fn main() -> Result<(), anyhow::Error> {
             }
         }
     }
-    println!("{args2:?}");
     let frame1 = &args2[1];
     let frame2 = &args2[2];
-    println!("lookup up '{frame1}' to '{frame2}'");
+    log::info!("lookup up '{frame1}' to '{frame2}'");
 
     let full_node_name = &format!("/{ns}/echo").replace("//", "/");
-    // println!("{}", format!("full ns and node name: {full_node_name}"));
+    // log::info!("{}", format!("full ns and node name: {full_node_name}"));
 
     let nh = NodeHandle::new(&std::env::var("ROS_MASTER_URI")?, full_node_name)
         .await
@@ -41,15 +45,17 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let mut update_interval = tokio::time::interval(tokio::time::Duration::from_millis(1000));
 
-    tokio::spawn(async move {
-        tokio::signal::ctrl_c().await.unwrap();
-        // TODO(lucasw) give the msg receiver thread a chance to cleanly finish the mcap
-        println!("ctrl-c, exiting");
-        tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
-        std::process::exit(0);
-    });
+    {
+        let mut nh = nh.clone();
+        tokio::spawn(async move {
+            tokio::signal::ctrl_c().await.unwrap();
+            // TODO(lucasw) give the msg receiver thread a chance to cleanly finish the mcap
+            log::info!("ctrl-c, exiting");
+            tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
+            nh.unregister_all_subscribers().await;
+        });
+    }
 
-    // println!("tf loop");
     loop {
         // TODO(lucasw) if there is a rosnode kill the listener will stop receiving messages
         // but this loop keeps going
@@ -95,7 +101,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 println!("            in RPY (radian) [{roll:.6} {pitch:.6} {yaw:.6}]",);
             }
             Err(err) => {
-                println!("{t1:?} {err:?}");
+                log::info!("{t1:?} {err:?}");
             }
         }
         // TODO(lucasw) publishing a dynamic transform followed by a static (for

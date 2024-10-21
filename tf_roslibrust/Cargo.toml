@@ -16,10 +16,12 @@ This supports ROS1 using the roslibrust crate.
 [dependencies]
 anyhow = "1.0.86"
 chrono = "0.4.38"
+log = "0.4.22"
 nalgebra.workspace = true
 serde = { version = "1.0", features = ["derive"] }
 serde-big-array = "0.5.1"
 serde_derive = "1.0.210"
+simple_logger = "5.0.0"
 smart-default = "0.7.1"
 thiserror.workspace = true
 tokio = "1.38.0"

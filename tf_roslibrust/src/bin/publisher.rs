@@ -1,3 +1,4 @@
+use roslibrust::ros1::NodeHandle;
 use tf_roslibrust::tf_util;
 use tf_roslibrust::transforms::tf2_msgs;
 
@@ -6,7 +7,11 @@ use tf_roslibrust::transforms::tf2_msgs;
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
-    use roslibrust::ros1::NodeHandle;
+    simple_logger::SimpleLogger::new()
+        .with_level(log::LevelFilter::Info)
+        // .without_timestamps() // required for running wsl2
+        .init()
+        .unwrap();
 
     // need to have leading slash on node name and topic to function properly
     // so figure out namespace then prefix it to name and topics
@@ -25,42 +30,53 @@ async fn main() -> Result<(), anyhow::Error> {
     }
 
     let full_node_name = &format!("/{ns}/tf_publisher").replace("//", "/");
-    // println!("{}", format!("full ns and node name: {full_node_name}"));
+    // log::info!("{}", format!("full ns and node name: {full_node_name}"));
 
     let config_file = &args2[1];
     let mut tfm = tf_util::get_transforms_from_toml(config_file)?;
 
-    let nh = NodeHandle::new(&std::env::var("ROS_MASTER_URI")?, full_node_name)
-        .await
-        .unwrap();
+    {
+        let mut nh = NodeHandle::new(&std::env::var("ROS_MASTER_URI")?, full_node_name)
+            .await
+            .unwrap();
 
-    // TODO(lucasw) optionally tf_static, and set to latching
-    let latching = false;
-    let tf_publisher = nh
-        .advertise::<tf2_msgs::TFMessage>("/tf", 10, latching)
-        .await
-        .unwrap();
+        // TODO(lucasw) optionally tf_static, and set to latching
+        let latching = false;
+        let tf_publisher = nh
+            .advertise::<tf2_msgs::TFMessage>("/tf", 10, latching)
+            .await
+            .unwrap();
 
-    let mut update_interval = tokio::time::interval(tokio::time::Duration::from_millis(1000));
+        let mut update_interval = tokio::time::interval(tokio::time::Duration::from_millis(1000));
 
-    tokio::spawn(async move {
-        tokio::signal::ctrl_c().await.unwrap();
-        // TODO(lucasw) give the msg receiver thread a chance to cleanly finish the mcap
-        println!("ctrl-c, exiting");
-        std::process::exit(0);
-    });
+        // TODO(lucasw) optional time limit
+        loop {
+            tokio::select! {
+                _ = tokio::signal::ctrl_c() => {
+                    log::info!("ctrl-c, exiting");
+                    break;
+                }
+                _ = update_interval.tick() => {
+                    let stamp = tf_util::stamp_now();
 
-    // TODO(lucasw) optional time limit
-    loop {
-        update_interval.tick().await;
-        let stamp = tf_util::stamp_now();
+                    for tf in &mut tfm.transforms {
+                        tf.header.stamp = stamp.clone();
+                    }
 
-        for tf in &mut tfm.transforms {
-            tf.header.stamp = stamp.clone();
+                    let rv = tf_publisher.publish(&tfm).await;
+                    if rv.is_err() {
+                        log::error!("{rv:?}");
+                        // TODO(lucasw) also want to return not-ok
+                        break;
+                    }
+                }
+            }
         }
-
-        tf_publisher.publish(&tfm).await?;
+        // nh.inner.unregister_publisher("/tf").await;
+        nh.unregister_all_subscribers().await;
     }
+    // wait for publisher tasks to finish
+    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
 
-    // Ok(())
+    Ok(())
 }
