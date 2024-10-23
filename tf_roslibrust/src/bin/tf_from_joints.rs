@@ -46,13 +46,13 @@ async fn main() -> Result<(), anyhow::Error> {
         // TODO(lucasw) allow remapping
         let js_topic = format!("/{ns}/joint_states").replace("//", "/");
         let mut js_subscriber = nh
-            .subscribe::<sensor_msgs::JointState>(&js_topic, 50)
+            .subscribe::<sensor_msgs::JointState>(&js_topic, 200)
             .await?;
 
         // TODO(lucasw) optionally tf_static, and set to latching
         let latching = false;
         let tf_publisher = nh
-            .advertise::<tf2_msgs::TFMessage>("/tf", 10, latching)
+            .advertise::<tf2_msgs::TFMessage>("/tf", 20, latching)
             .await
             .unwrap();
 
