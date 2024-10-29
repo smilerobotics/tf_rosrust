@@ -1,9 +1,10 @@
+use clap::{arg, command};
 use roslibrust::ros1::NodeHandle;
 use tf_roslibrust::tf_util;
 use tf_roslibrust::transforms::tf2_msgs;
 
 /// Load a toml file of a list of transforms and publish them
-/// tf_publisher examples/transforms.toml
+/// tf_publisher -i examples/transforms.toml
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
@@ -17,22 +18,41 @@ async fn main() -> Result<(), anyhow::Error> {
     // so figure out namespace then prefix it to name and topics
     let mut ns = String::from("");
     let args = std::env::args();
-    let mut args2 = Vec::new();
+    let mut unused_args = Vec::new();
     {
         // get namespace
         for arg in args {
             if arg.starts_with("__ns:=") {
                 ns = arg.replace("__ns:=", "");
             } else {
-                args2.push(arg);
+                unused_args.push(arg);
             }
         }
     }
 
+    let matches = command!()
+        .arg(
+            arg!(
+                -i --input <INPUT> "input toml file with transforms to publish"
+            )
+            .required(true),
+        )
+        .arg(
+            arg!(
+                -w --wait <WAIT> "number of milliseconds between publishing tf data"
+            )
+            .default_value("1000")
+            .value_parser(clap::value_parser!(u64))
+            .required(false),
+        )
+        .get_matches_from(unused_args);
+    let config_file = matches.get_one::<String>("input").unwrap();
+    let wait_millis = *matches.get_one::<u64>("wait").unwrap();
+    println!("# loading {config_file}, waiting {wait_millis}ms between publishes");
+
     let full_node_name = &format!("/{ns}/tf_publisher").replace("//", "/");
     // log::info!("{}", format!("full ns and node name: {full_node_name}"));
 
-    let config_file = &args2[1];
     let mut tfm = tf_util::get_transforms_from_toml(config_file)?;
 
     {
@@ -47,7 +67,8 @@ async fn main() -> Result<(), anyhow::Error> {
             .await
             .unwrap();
 
-        let mut update_interval = tokio::time::interval(tokio::time::Duration::from_millis(1000));
+        let mut update_interval =
+            tokio::time::interval(tokio::time::Duration::from_millis(wait_millis));
 
         // TODO(lucasw) optional time limit
         loop {
