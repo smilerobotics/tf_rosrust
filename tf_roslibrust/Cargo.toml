@@ -1,6 +1,6 @@
 [package]
 name = "tf_roslibrust"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
 rust-version = "1.75"
 license = "BSD 3-Clause"
@@ -16,6 +16,7 @@ This supports ROS1 using the roslibrust crate.
 [dependencies]
 anyhow = "1.0.86"
 chrono = "0.4.38"
+clap = { version = "4.5.16", features = ["cargo"] }
 log = "0.4.22"
 nalgebra.workspace = true
 serde = { version = "1.0", features = ["derive"] }
