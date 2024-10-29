@@ -1,3 +1,4 @@
+use clap::{arg, command};
 use roslibrust::ros1::NodeHandle;
 use tf_roslibrust::tf_util;
 use tf_roslibrust::transforms::{sensor_msgs, tf2_msgs};
@@ -17,22 +18,32 @@ async fn main() -> Result<(), anyhow::Error> {
     // so figure out namespace then prefix it to name and topics
     let mut ns = String::from("");
     let args = std::env::args();
-    let mut args2 = Vec::new();
+    let mut unused_args = Vec::new();
     {
         // get namespace
         for arg in args {
             if arg.starts_with("__ns:=") {
                 ns = arg.replace("__ns:=", "");
             } else {
-                args2.push(arg);
+                unused_args.push(arg);
             }
         }
     }
 
+    let matches = command!()
+        .arg(
+            arg!(
+                -i --input <INPUT> "input toml file with transforms to look up and republish with optional modifications"
+            )
+            .required(true),
+        )
+        .get_matches_from(unused_args);
+    let config_file = matches.get_one::<String>("input").unwrap();
+    println!("# loading {config_file}");
+
     let full_node_name = &format!("/{ns}/tf_from_joints").replace("//", "/");
     // log::info!("{}", format!("full ns and node name: {full_node_name}"));
 
-    let config_file = &args2[1];
     let joints_config = tf_util::get_joints_from_toml(config_file)?;
     for joint in &joints_config {
         log::info!("{joint:?}");
