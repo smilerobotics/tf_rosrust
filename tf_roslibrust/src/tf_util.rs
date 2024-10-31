@@ -1,11 +1,12 @@
 use chrono::TimeDelta;
 use roslibrust_codegen::Time;
 use serde_derive::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::time::SystemTime;
 
 use crate::transforms::isometry_to_transform;
 use crate::transforms::{geometry_msgs, sensor_msgs, std_msgs, tf2_msgs};
+use crate::TfBuffer;
 use crate::{tf_error::TfError, LookupTransform};
 
 pub fn to_stamp(secs: u32, nsecs: u32) -> Time {
@@ -411,6 +412,68 @@ pub fn joint_states_to_tfm(
         }
     }
     Ok(tfm)
+}
+
+/// print the current tf tree
+/// adapted from tf_demo tf_tree.py
+fn print_tree_recursive(
+    tf_buffer: &TfBuffer,
+    parent_to_children: &HashMap<String, HashSet<String>>,
+    parent: &str,
+    level: u8,
+) -> Result<(), anyhow::Error> {
+    if level > 1 {
+        for _ in 0..level {
+            print!("   ");
+        }
+    }
+    if level > 0 {
+        print!("-- ");
+    }
+
+    print!("{parent}");
+    let rate = tf_buffer.get_rate(parent);
+    if let Some(rate) = rate {
+        if rate > 0.0 {
+            print!("  {rate:.2}Hz");
+        }
+    }
+    println!();
+
+    match parent_to_children.get(parent) {
+        Some(children) => {
+            let mut children = children.iter().collect::<Vec<_>>();
+            children.sort();
+            for child in children {
+                let _ = print_tree_recursive(tf_buffer, parent_to_children, child, level + 1);
+            }
+        }
+        None => {
+            // no children
+            return Ok(());
+        }
+    }
+
+    Ok(())
+}
+
+pub fn print_tree(tf_buffer: &TfBuffer) -> Result<(), anyhow::Error> {
+    let parent_to_children = tf_buffer.get_parent_to_children();
+    if false {
+        let mut keys_sorted = parent_to_children.keys().collect::<Vec<_>>();
+        keys_sorted.sort();
+        for parent in keys_sorted {
+            println!("{parent}: {:?}", parent_to_children.get(parent).unwrap());
+        }
+    }
+
+    let roots = tf_buffer.get_roots()?;
+    for root in roots {
+        println!("[");
+        let _ = print_tree_recursive(tf_buffer, &parent_to_children, &root, 0);
+        println!("]");
+    }
+    Ok(())
 }
 
 #[cfg(test)]
