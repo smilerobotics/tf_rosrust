@@ -1,0 +1,44 @@
+[package]
+name = "tf_mcap"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+anyhow = "1.0.91"
+chrono = "0.4.38"
+clap = "4.5.20"
+log = "0.4.22"
+mcap = "0.11.0"
+serde_rosmsg = "0.2.0"
+simple-log = "2.1.1"
+simple_logger = "5.0.0"
+
+[dependencies.mcap_tools]
+git = "https://github.com/lucasw/mcap_tools"
+branch = "main"
+
+[dependencies.roslibrust]
+git = "https://github.com/lucasw/roslibrust"
+branch = "get_rx_msg_def"
+# version="0.10.2"
+features = ["ros1"]
+
+[dependencies.roslibrust_codegen]
+git = "https://github.com/lucasw/roslibrust"
+branch = "get_rx_msg_def"
+
+[dependencies.roslibrust_codegen_macro]
+git = "https://github.com/lucasw/roslibrust"
+branch = "get_rx_msg_def"
+
+[dependencies.tf_roslibrust]
+path = "../tf_roslibrust"
+
+[[bin]]
+name = "tf_mcap_tree"
+path = "src/bin/mcap_tree.rs"

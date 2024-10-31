@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = [
+members = [ "tf_mcap",
     "tf_roslibrust",
 ]
 
@@ -18,7 +18,5 @@ keywords = ["transforms", "robotics", "ROS", "tf"]
 categories = ["science::robotics"]
 
 [workspace.dependencies]
-futures = "0.3"
 nalgebra = "0.30"
-thiserror = "1.0"
-tokio = "1"
+thiserror = "1.0.65"
