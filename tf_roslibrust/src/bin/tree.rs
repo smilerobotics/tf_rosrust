@@ -14,9 +14,9 @@ async fn main() -> Result<(), anyhow::Error> {
         .init()
         .unwrap();
 
-    // TODO(lucasw) ought to have mcap_tools mpsisc::get_params_remaps()
-    // but mcap_tools depends on tf_roslibrust, so can't be circular-
-    // instead need to move non-mcap utilities into another crate
+    // TODO(lucasw) ought to have mcap_tools misc::get_params_remaps()
+    // but want to avoid that dependency
+    // instead need to move non-mcap utilities into another crate (could be in same repo)
     // need to have leading slash on node name and topic to function properly
     // so figure out namespace then prefix it to name and topics
     let mut ns = String::from("");
