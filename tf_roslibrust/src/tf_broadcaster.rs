@@ -1,9 +1,7 @@
-use crate::{
-    tf_error::TfError,
-    transforms::{geometry_msgs::TransformStamped, tf2_msgs::TFMessage},
-};
+use crate::tf_error::TfError;
 use roslibrust::ros1::NodeHandle;
 use roslibrust::ros1::Publisher;
+use roslibrust_util::{geometry_msgs, tf2_msgs};
 
 /// Broadcast tf messages
 ///
@@ -36,7 +34,7 @@ use roslibrust::ros1::Publisher;
 /// */
 /// ```
 pub struct TfBroadcaster {
-    publisher: Publisher<TFMessage>,
+    publisher: Publisher<tf2_msgs::TFMessage>,
 }
 
 impl TfBroadcaster {
@@ -50,8 +48,8 @@ impl TfBroadcaster {
 
     // TODO(lucasw) need be able to send list of transforms
     /// Broadcast transform
-    pub async fn send_transform(&self, tf: TransformStamped) -> Result<(), TfError> {
-        let tf_message = TFMessage {
+    pub async fn send_transform(&self, tf: geometry_msgs::TransformStamped) -> Result<(), TfError> {
+        let tf_message = tf2_msgs::TFMessage {
             transforms: vec![tf],
         };
         // TODO: handle error correctly

@@ -1,11 +1,12 @@
 use chrono::TimeDelta;
 use roslibrust_codegen::Time;
+use roslibrust_util::geometry_msgs::TransformStamped;
 use std::collections::BTreeMap;
 
 use crate::{
     tf_error::TfError,
     tf_util::{duration_to_f64, duration_to_stamp, stamp_to_duration},
-    transforms::{geometry_msgs::TransformStamped, interpolate, to_transform_stamped},
+    transforms::{interpolate, to_transform_stamped},
 };
 
 #[derive(Clone, Debug)]

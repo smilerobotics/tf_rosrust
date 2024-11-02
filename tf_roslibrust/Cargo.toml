@@ -1,6 +1,6 @@
 [package]
 name = "tf_roslibrust"
-version = "0.2.3"
+version = "0.2.4"
 edition = "2021"
 rust-version = "1.75"
 license = "BSD 3-Clause"
@@ -27,6 +27,9 @@ smart-default = "0.7.1"
 thiserror.workspace = true
 tokio = "1.38.0"
 toml = "0.8.19"
+
+[dependencies.roslibrust_util]
+path = "../roslibrust_util"
 
 [dependencies.roslibrust]
 git = "https://github.com/lucasw/roslibrust"

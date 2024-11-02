@@ -1,8 +1,5 @@
-use crate::{
-    tf_buffer::TfBuffer,
-    tf_error::TfError,
-    transforms::{geometry_msgs::TransformStamped, tf2_msgs::TFMessage},
-};
+use crate::{tf_buffer::TfBuffer, tf_error::TfError};
+use roslibrust_util::{geometry_msgs, tf2_msgs};
 
 use roslibrust::ros1::NodeHandle;
 use roslibrust_codegen::Time;
@@ -44,7 +41,10 @@ impl TfListener {
 
         let dyn_tfm_sender = static_tfm_sender.clone();
         // let dyn_nh = nh.clone();
-        let mut dynamic_subscriber = nh.subscribe::<TFMessage>("/tf", 200).await.unwrap();
+        let mut dynamic_subscriber = nh
+            .subscribe::<tf2_msgs::TFMessage>("/tf", 200)
+            .await
+            .unwrap();
         let tf_handle = tokio::spawn(async move {
             while let Some(rv) = dynamic_subscriber.next().await {
                 // print!(".");
@@ -60,7 +60,10 @@ impl TfListener {
             }
         });
 
-        let mut static_subscriber = nh.subscribe::<TFMessage>("/tf_static", 200).await.unwrap();
+        let mut static_subscriber = nh
+            .subscribe::<tf2_msgs::TFMessage>("/tf_static", 200)
+            .await
+            .unwrap();
         let tf_static_handle = tokio::spawn(async move {
             while let Some(rv) = static_subscriber.next().await {
                 // print!(".");
@@ -152,7 +155,7 @@ impl crate::LookupTransform for TfListener {
         from: &str,
         to: &str,
         time: Option<Time>,
-    ) -> Result<TransformStamped, TfError> {
+    ) -> Result<geometry_msgs::TransformStamped, TfError> {
         // self.buffer.read().unwrap().lookup_transform(from, to, time)
         self.buffer.read().unwrap().lookup_transform(from, to, time)
     }
@@ -166,7 +169,7 @@ impl crate::LookupTransform for TfListener {
         to: &str,
         time2: Time,
         fixed_frame: &str,
-    ) -> Result<TransformStamped, TfError> {
+    ) -> Result<geometry_msgs::TransformStamped, TfError> {
         self.buffer
             .read()
             .unwrap()

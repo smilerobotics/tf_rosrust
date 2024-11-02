@@ -18,6 +18,11 @@ serde_rosmsg = "0.2.0"
 simple-log = "2.1.1"
 simple_logger = "5.0.0"
 
+# TODO(lucasw) every package here depends on roslibrust_util and roslibrust,
+# put these in the parent Cargo.toml
+[dependencies.roslibrust_util]
+path = "../roslibrust_util"
+
 [dependencies.mcap_tools]
 git = "https://github.com/lucasw/mcap_tools"
 branch = "main"

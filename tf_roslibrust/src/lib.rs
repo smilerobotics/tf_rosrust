@@ -20,13 +20,15 @@
 //! */
 //!```
 
+use roslibrust_util::geometry_msgs;
+
 pub trait LookupTransform {
     fn lookup_transform(
         &self,
         from: &str,
         to: &str,
         stamp0: Option<roslibrust_codegen::Time>,
-    ) -> Result<transforms::geometry_msgs::TransformStamped, tf_error::TfError>;
+    ) -> Result<geometry_msgs::TransformStamped, tf_error::TfError>;
 
     fn lookup_transform_with_time_travel(
         &self,
@@ -35,7 +37,7 @@ pub trait LookupTransform {
         from: &str,
         time1: roslibrust_codegen::Time,
         fixed_frame: &str,
-    ) -> Result<transforms::geometry_msgs::TransformStamped, tf_error::TfError>;
+    ) -> Result<geometry_msgs::TransformStamped, tf_error::TfError>;
 }
 
 mod tf_broadcaster;

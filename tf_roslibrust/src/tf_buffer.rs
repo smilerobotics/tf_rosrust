@@ -2,16 +2,14 @@ use std::collections::{hash_map::Entry, HashMap, HashSet};
 
 use chrono::TimeDelta;
 use roslibrust_codegen::Time;
+use roslibrust_util::{geometry_msgs, std_msgs::Header, tf2_msgs};
 
 use crate::{
     tf_error::TfError,
     tf_graph_node::TfGraphNode,
     tf_individual_transform_chain::TfIndividualTransformChain,
     tf_util::{stamp_to_duration, to_stamp},
-    transforms::{
-        chain_transforms, geometry_msgs::TransformStamped, get_inverse, std_msgs::Header,
-        tf2_msgs::TFMessage, to_transform_stamped,
-    },
+    transforms::{chain_transforms, get_inverse, to_transform_stamped},
 };
 
 #[derive(Clone, Debug)]
@@ -46,7 +44,7 @@ impl TfBuffer {
 
     pub fn handle_incoming_transforms(
         &mut self,
-        transforms: TFMessage,
+        transforms: tf2_msgs::TFMessage,
         is_static: bool,
     ) -> Result<(), TfError> {
         for transform in transforms.transforms {
@@ -59,7 +57,7 @@ impl TfBuffer {
     // much faster than lookup are occuring, so only detect loops in a lookup
     pub fn add_transform(
         &mut self,
-        transform: &TransformStamped,
+        transform: &geometry_msgs::TransformStamped,
         is_static_tf: bool,
     ) -> Result<(), TfError> {
         // TODO(lucasw) need to retire transforms from this index when they expire
@@ -236,8 +234,8 @@ impl TfBuffer {
         from: &str,
         to: &str,
         stamp: Option<Time>,
-    ) -> Result<Vec<TransformStamped>, TfError> {
-        let mut tf_list = Vec::<TransformStamped>::new();
+    ) -> Result<Vec<geometry_msgs::TransformStamped>, TfError> {
+        let mut tf_list = Vec::<geometry_msgs::TransformStamped>::new();
         let path0 = self.retrieve_transform_path(from, to)?;
         // TODO(lucasw) how to iterate through path0 to get adjacent elements like
         // this?
@@ -319,10 +317,10 @@ impl crate::LookupTransform for TfBuffer {
         from: &str,
         to: &str,
         stamp0: Option<Time>,
-    ) -> Result<TransformStamped, TfError> {
+    ) -> Result<geometry_msgs::TransformStamped, TfError> {
         if from == to {
             // TODO(lucasw) use default syntax
-            let mut tfs = TransformStamped::default();
+            let mut tfs = geometry_msgs::TransformStamped::default();
             tfs.header.frame_id = from.to_string();
             tfs.child_frame_id = to.to_string();
             match stamp0 {
@@ -390,7 +388,7 @@ impl crate::LookupTransform for TfBuffer {
         // TODO(lucasw) str vs. String here- can it all be made consistent?
         let tf_list = self.get_tf_list(from, to, stamp.clone())?;
         let final_tf = chain_transforms(&tf_list);
-        let msg = TransformStamped {
+        let msg = geometry_msgs::TransformStamped {
             child_frame_id: to.to_string(),
             header: Header {
                 frame_id: from.to_string(),
@@ -416,7 +414,7 @@ impl crate::LookupTransform for TfBuffer {
         from: &str,
         time1: Time,
         fixed_frame: &str,
-    ) -> Result<TransformStamped, TfError> {
+    ) -> Result<geometry_msgs::TransformStamped, TfError> {
         let tf1 = self.lookup_transform(from, fixed_frame, Some(time1.clone()))?;
         let tf2 = self.lookup_transform(to, fixed_frame, Some(time2))?;
         let transforms = get_inverse(&tf1);
@@ -436,8 +434,8 @@ mod test {
     use Time;
 
     use super::*;
-    use crate::transforms::geometry_msgs::{Quaternion, Transform, Vector3};
     use crate::LookupTransform;
+    use roslibrust_util::geometry_msgs::{Quaternion, Transform, TransformStamped, Vector3};
 
     const PARENT: &str = "parent";
     const CHILD0: &str = "child0";

@@ -1,8 +1,8 @@
 pub use nalgebra;
 use nalgebra::geometry::{Isometry3, Translation3, UnitQuaternion};
 use roslibrust_codegen::Time;
+use roslibrust_util::{geometry_msgs, std_msgs};
 
-roslibrust_codegen_macro::find_and_generate_ros_messages!();
 use geometry_msgs::{Pose, Quaternion, Transform, TransformStamped, Vector3};
 use std_msgs::Header;
 

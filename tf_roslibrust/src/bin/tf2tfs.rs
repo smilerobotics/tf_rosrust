@@ -2,10 +2,11 @@
 /// look each up and broadcast them (if they have different timestamps than the last lookup)
 use clap::{arg, command};
 use roslibrust::ros1::NodeHandle;
+use roslibrust_util::get_params_remaps;
+use roslibrust_util::tf2_msgs;
 use std::collections::HashMap;
 use tf_roslibrust::{
     tf_util::{get_tf2tf_from_toml, tf2tf_to_tfm, to_stamp},
-    transforms::tf2_msgs,
     TfListener,
 };
 
@@ -18,19 +19,16 @@ async fn main() -> Result<(), anyhow::Error> {
 
     // need to have leading slash on node name and topic to function properly
     // so figure out namespace then prefix it to name and topics
-    let mut ns = String::from("");
-    let args = std::env::args();
-    let mut unused_args = Vec::new();
-    {
-        // get namespace
-        for arg in args {
-            if arg.starts_with("__ns:=") {
-                ns = arg.replace("__ns:=", "");
-            } else {
-                unused_args.push(arg);
-            }
-        }
-    }
+    let (full_node_name, unused_args, _remaps) = {
+        let mut params = HashMap::<String, String>::new();
+        params.insert("_name".to_string(), "tf2tfs".to_string());
+        let mut remaps = HashMap::<String, String>::new();
+        let (_ns, full_node_name, unused_args) = get_params_remaps(&mut params, &mut remaps);
+        (full_node_name, unused_args, remaps)
+    };
+
+    let master_uri =
+        std::env::var("ROS_MASTER_URI").unwrap_or("http://localhost:11311".to_string());
 
     let matches = command!()
         .arg(
@@ -43,9 +41,6 @@ async fn main() -> Result<(), anyhow::Error> {
     let config_file = matches.get_one::<String>("input").unwrap();
     println!("# loading {config_file}");
 
-    let full_node_name = &format!("/{ns}/tf2tfs").replace("//", "/");
-    // log::info!("{}", format!("full ns and node name: {full_node_name}"));
-
     let tf2tf_config = get_tf2tf_from_toml(config_file)?;
     // assume the broadcast_child frame is unique (otherwise there'd be multiple parents
     // TODO(lucasw) get_tf2tf_from_toml() could error on duplicate broadcast_child frames
@@ -57,9 +52,7 @@ async fn main() -> Result<(), anyhow::Error> {
     }
 
     {
-        let nh = NodeHandle::new(&std::env::var("ROS_MASTER_URI")?, full_node_name)
-            .await
-            .unwrap();
+        let nh = NodeHandle::new(&master_uri, &full_node_name).await?;
 
         let tf_listener = TfListener::new(&nh).await;
 

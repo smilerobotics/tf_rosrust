@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = [ "tf_mcap",
+members = [ "roslibrust_util", "tf_mcap",
     "tf_roslibrust",
 ]
 

@@ -1,7 +1,9 @@
 use clap::{arg, command};
 use roslibrust::ros1::NodeHandle;
+use roslibrust_util::get_params_remaps;
+use roslibrust_util::tf2_msgs;
+use std::collections::HashMap;
 use tf_roslibrust::tf_util;
-use tf_roslibrust::transforms::tf2_msgs;
 use tf_roslibrust::LookupTransform;
 
 /// Load a toml file of a list of parent/child frames and then find all those transforms in
@@ -15,21 +17,16 @@ async fn main() -> Result<(), anyhow::Error> {
         .init()
         .unwrap();
 
-    // need to have leading slash on node name and topic to function properly
-    // so figure out namespace then prefix it to name and topics
-    let mut ns = String::from("");
-    let args = std::env::args();
-    let mut unused_args = Vec::new();
-    {
-        // get namespace
-        for arg in args {
-            if arg.starts_with("__ns:=") {
-                ns = arg.replace("__ns:=", "");
-            } else {
-                unused_args.push(arg);
-            }
-        }
-    }
+    let (full_node_name, unused_args, _remaps) = {
+        let mut params = HashMap::<String, String>::new();
+        params.insert("_name".to_string(), "tf_capture".to_string());
+        let mut remaps = HashMap::<String, String>::new();
+        let (_ns, full_node_name, unused_args) = get_params_remaps(&mut params, &mut remaps);
+        (full_node_name, unused_args, remaps)
+    };
+
+    let master_uri =
+        std::env::var("ROS_MASTER_URI").unwrap_or("http://localhost:11311".to_string());
 
     let matches = command!()
         .arg(
@@ -51,14 +48,9 @@ async fn main() -> Result<(), anyhow::Error> {
     println!("# loading {config_file}");
     let wait_seconds = *matches.get_one::<u64>("wait").unwrap();
 
-    let full_node_name = &format!("/{ns}/tf_capture").replace("//", "/");
-    // log::info!("{}", format!("full ns and node name: {full_node_name}"));
-
     let old_tfm = tf_util::get_transforms_from_toml(config_file)?;
 
-    let mut nh = NodeHandle::new(&std::env::var("ROS_MASTER_URI")?, full_node_name)
-        .await
-        .unwrap();
+    let mut nh = NodeHandle::new(&master_uri, &full_node_name).await?;
 
     println!(
         "# {:.3} getting transforms...",

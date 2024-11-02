@@ -1,7 +1,7 @@
 use clap::{arg, command};
 use roslibrust::ros1::NodeHandle;
+use roslibrust_util::tf2_msgs;
 use tf_roslibrust::tf_util;
-use tf_roslibrust::transforms::tf2_msgs;
 
 /// Load a toml file of a list of transforms and publish them
 /// tf_publisher -i examples/transforms.toml

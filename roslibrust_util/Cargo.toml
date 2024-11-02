@@ -1,0 +1,42 @@
+[package]
+name = "roslibrust_util"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.92"
+camino = "1.1.9"
+memmap = "0.7.0"
+serde = { version = "1.0", features = ["derive"] }
+serde-big-array = "0.5.1"
+serde_derive = "1.0.210"
+thiserror.workspace = true
+tokio = "1.41.0"
+toml = "0.8.19"
+tracing = "0.1.40"
+
+[dependencies.roslibrust]
+git = "https://github.com/lucasw/roslibrust"
+branch = "get_rx_msg_def"
+# path = "../../roslibrust/roslibrust"
+# version="0.10.2"
+features = ["ros1"]
+
+[dependencies.roslibrust_codegen]
+git = "https://github.com/lucasw/roslibrust"
+branch = "get_rx_msg_def"
+# path = "../../roslibrust/roslibrust_codegen"
+# version="0.10"
+
+[dependencies.roslibrust_codegen_macro]
+git = "https://github.com/lucasw/roslibrust"
+branch = "get_rx_msg_def"
+# path = "../../roslibrust/roslibrust_codegen_macro"
+# version="0.10"
