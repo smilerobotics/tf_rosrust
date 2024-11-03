@@ -1,8 +1,8 @@
 use roslibrust::ros1::NodeHandle;
+use roslibrust_util::get_params_remaps;
+use std::collections::HashMap;
 use tf_roslibrust::LookupTransform;
 use tf_roslibrust::{tf_util, TfListener};
-
-roslibrust_codegen_macro::find_and_generate_ros_messages!();
 
 /// Take in a source and destination frame argument
 /// and repeatedly print the transform between them if any
@@ -15,31 +15,22 @@ async fn main() -> Result<(), anyhow::Error> {
         .init()
         .unwrap();
 
-    // need to have leading slash on node name and topic to function properly
-    // so figure out namespace then prefix it to name and topics
-    let mut ns = String::from("");
-    let args = std::env::args();
-    let mut args2 = Vec::new();
-    {
-        // get namespace
-        for arg in args {
-            if arg.starts_with("__ns:=") {
-                ns = arg.replace("__ns:=", "");
-            } else {
-                args2.push(arg);
-            }
-        }
-    }
-    let frame1 = &args2[1];
-    let frame2 = &args2[2];
+    let (full_node_name, unused_args, _remaps) = {
+        let mut params = HashMap::<String, String>::new();
+        params.insert("_name".to_string(), "tf_echo".to_string());
+        let mut remaps = HashMap::<String, String>::new();
+        let (_ns, full_node_name, unused_args) = get_params_remaps(&mut params, &mut remaps);
+        (full_node_name, unused_args, remaps)
+    };
+
+    let master_uri =
+        std::env::var("ROS_MASTER_URI").unwrap_or("http://localhost:11311".to_string());
+
+    let frame1 = &unused_args[1];
+    let frame2 = &unused_args[2];
     log::info!("lookup up '{frame1}' to '{frame2}'");
 
-    let full_node_name = &format!("/{ns}/echo").replace("//", "/");
-    // log::info!("{}", format!("full ns and node name: {full_node_name}"));
-
-    let nh = NodeHandle::new(&std::env::var("ROS_MASTER_URI")?, full_node_name)
-        .await
-        .unwrap();
+    let nh = NodeHandle::new(&master_uri, &full_node_name).await.unwrap();
 
     let listener = TfListener::new(&nh).await;
 

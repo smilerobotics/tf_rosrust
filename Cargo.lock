@@ -2229,7 +2229,6 @@ dependencies = [
  "nalgebra 0.30.1",
  "roslibrust",
  "roslibrust_codegen",
- "roslibrust_codegen_macro",
  "roslibrust_util",
  "serde",
  "serde-big-array",

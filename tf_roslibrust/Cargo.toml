@@ -44,12 +44,6 @@ branch = "get_rx_msg_def"
 # path = "../../roslibrust/roslibrust_codegen"
 # version="0.10"
 
-[dependencies.roslibrust_codegen_macro]
-git = "https://github.com/lucasw/roslibrust"
-branch = "get_rx_msg_def"
-# path = "../../roslibrust/roslibrust_codegen_macro"
-# version="0.10"
-
 [[bin]]
 name = "tf_capture"
 path = "src/bin/capture.rs"
