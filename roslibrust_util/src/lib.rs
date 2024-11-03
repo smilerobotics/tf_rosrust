@@ -53,6 +53,11 @@ pub fn get_params_remaps(
     if !params.contains_key("_name") {
         params.insert("_name".to_string(), "node_tbd".to_string());
     }
+    if !params.contains_key("_log") {
+        // TODO(lucasw) generate a random string
+        // TODO(lucasw) not actually doing anything with these logs
+        params.insert("_log".to_string(), "tbd_node_logs.log".to_string());
+    }
     params.insert("_ns".to_string(), "".to_string());
 
     // TODO(lucasw) can an existing rust arg handling library handle the ':=' ros cli args?
@@ -73,12 +78,12 @@ pub fn get_params_remaps(
         key.replace_range(0..1, "");
 
         if !params.contains_key(&key) {
-            println!("unexpected param: '{key}' '{val}'");
+            tracing::warn!("unexpected param: '{key}' '{val}'");
             // continue;
         }
         params.insert(key, val);
     }
-    println!("{args2:?}");
+    tracing::info!("{args2:?}");
 
     let ns = params.remove("_ns").unwrap();
     let full_node_name = &format!("/{}/{}", &ns, &params["_name"],).replace("//", "/");

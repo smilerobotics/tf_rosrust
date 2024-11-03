@@ -1,6 +1,8 @@
 use clap::{arg, command};
 use roslibrust::ros1::NodeHandle;
+use roslibrust_util::get_params_remaps;
 use roslibrust_util::{sensor_msgs, tf2_msgs};
+use std::collections::HashMap;
 use tf_roslibrust::tf_util;
 
 /// Load a toml file of a list of joint names and their properties,
@@ -14,24 +16,17 @@ async fn main() -> Result<(), anyhow::Error> {
         .init()
         .unwrap();
 
-    // need to have leading slash on node name and topic to function properly
-    // so figure out namespace then prefix it to name and topics
-    let mut ns = String::from("");
-    let mut name = String::from("tf_from_joints");
-    let args = std::env::args();
-    let mut unused_args = Vec::new();
-    {
-        // get namespace
-        for arg in args {
-            if arg.starts_with("__name:=") {
-                name = arg.replace("__name:=", "");
-            } else if arg.starts_with("__ns:=") {
-                ns = arg.replace("__ns:=", "");
-            } else {
-                unused_args.push(arg);
-            }
-        }
-    }
+    let (full_node_name, unused_args, remaps) = {
+        let mut params = HashMap::<String, String>::new();
+        params.insert("_name".to_string(), "tf_fron_joints".to_string());
+        let mut remaps = HashMap::<String, String>::new();
+        remaps.insert("joint_states".into(), "joint_states".into());
+        let (_ns, full_node_name, unused_args) = get_params_remaps(&mut params, &mut remaps);
+        (full_node_name, unused_args, remaps)
+    };
+
+    let master_uri =
+        std::env::var("ROS_MASTER_URI").unwrap_or("http://localhost:11311".to_string());
 
     let matches = command!()
         .arg(
@@ -44,23 +39,18 @@ async fn main() -> Result<(), anyhow::Error> {
     let config_file = matches.get_one::<String>("input").unwrap();
     println!("# loading {config_file}");
 
-    let full_node_name = &format!("/{ns}/{name}").replace("//", "/");
-    // log::info!("{}", format!("full ns and node name: {full_node_name}"));
-
     let joints_config = tf_util::get_joints_from_toml(config_file)?;
     for joint in &joints_config {
         log::info!("{joint:?}");
     }
 
     {
-        let nh = NodeHandle::new(&std::env::var("ROS_MASTER_URI")?, full_node_name)
-            .await
-            .unwrap();
+        let nh = NodeHandle::new(&master_uri, &full_node_name).await.unwrap();
 
         // TODO(lucasw) allow remapping
-        let js_topic = format!("/{ns}/joint_states").replace("//", "/");
+        let js_topic = remaps.get("joint_states").unwrap();
         let mut js_subscriber = nh
-            .subscribe::<sensor_msgs::JointState>(&js_topic, 200)
+            .subscribe::<sensor_msgs::JointState>(js_topic, 200)
             .await?;
 
         // TODO(lucasw) optionally tf_static, and set to latching
