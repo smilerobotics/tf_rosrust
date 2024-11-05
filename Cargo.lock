@@ -1731,6 +1731,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "camino",
+ "log",
  "memmap",
  "roslibrust",
  "roslibrust_codegen",
@@ -2208,9 +2209,6 @@ dependencies = [
  "log",
  "mcap 0.11.0",
  "mcap_tools",
- "roslibrust",
- "roslibrust_codegen",
- "roslibrust_codegen_macro",
  "roslibrust_util",
  "serde_rosmsg",
  "simple-log",

@@ -14,10 +14,10 @@ This supports ROS1 using the roslibrust crate.
 """
 
 [dependencies]
-anyhow = "1.0.86"
+anyhow.workspace = true
 chrono = "0.4.38"
-clap = { version = "4.5.16", features = ["cargo"] }
-log = "0.4.22"
+clap.workspace = true
+log.workspace = true
 nalgebra.workspace = true
 serde = { version = "1.0", features = ["derive"] }
 serde-big-array = "0.5.1"
@@ -25,24 +25,14 @@ serde_derive = "1.0.210"
 simple_logger = "5.0.0"
 smart-default = "0.7.1"
 thiserror.workspace = true
-tokio = "1.38.0"
-toml = "0.8.19"
+tokio.workspace = true
+toml.workspace = true
+
+roslibrust.workspace = true
+roslibrust_codegen.workspace = true
 
 [dependencies.roslibrust_util]
 path = "../roslibrust_util"
-
-[dependencies.roslibrust]
-git = "https://github.com/lucasw/roslibrust"
-branch = "get_rx_msg_def"
-# path = "../../roslibrust/roslibrust"
-# version="0.10.2"
-features = ["ros1"]
-
-[dependencies.roslibrust_codegen]
-git = "https://github.com/lucasw/roslibrust"
-branch = "get_rx_msg_def"
-# path = "../../roslibrust/roslibrust_codegen"
-# version="0.10"
 
 [[bin]]
 name = "tf_capture"

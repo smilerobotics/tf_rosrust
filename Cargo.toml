@@ -18,5 +18,21 @@ keywords = ["transforms", "robotics", "ROS", "tf"]
 categories = ["science::robotics"]
 
 [workspace.dependencies]
+anyhow = "1.0.92"
+clap = { version = "4.5.16", features = ["cargo"] }
+log = "0.4.22"
 nalgebra = "0.30"
 thiserror = "1.0.65"
+tokio = "1.40.0"
+toml = "0.8.19"
+
+[workspace.dependencies.roslibrust]
+git = "https://github.com/lucasw/roslibrust"
+branch = "get_rx_msg_def"
+# path = "../../roslibrust/roslibrust"
+# version="0.10.2"
+features = ["ros1"]
+
+[workspace.dependencies.roslibrust_codegen]
+git = "https://github.com/lucasw/roslibrust"
+branch = "get_rx_msg_def"

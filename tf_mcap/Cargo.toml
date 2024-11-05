@@ -9,10 +9,10 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
-anyhow = "1.0.91"
+anyhow.workspace = true
 chrono = "0.4.38"
-clap = "4.5.20"
-log = "0.4.22"
+clap.workspace = true
+log.workspace = true
 mcap = "0.11.0"
 serde_rosmsg = "0.2.0"
 simple-log = "2.1.1"
@@ -26,20 +26,6 @@ path = "../roslibrust_util"
 [dependencies.mcap_tools]
 git = "https://github.com/lucasw/mcap_tools"
 branch = "main"
-
-[dependencies.roslibrust]
-git = "https://github.com/lucasw/roslibrust"
-branch = "get_rx_msg_def"
-# version="0.10.2"
-features = ["ros1"]
-
-[dependencies.roslibrust_codegen]
-git = "https://github.com/lucasw/roslibrust"
-branch = "get_rx_msg_def"
-
-[dependencies.roslibrust_codegen_macro]
-git = "https://github.com/lucasw/roslibrust"
-branch = "get_rx_msg_def"
 
 [dependencies.tf_roslibrust]
 path = "../tf_roslibrust"
