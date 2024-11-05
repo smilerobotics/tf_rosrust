@@ -14,6 +14,7 @@ chrono = "0.4.38"
 clap.workspace = true
 log.workspace = true
 mcap = "0.11.0"
+nalgebra.workspace = true
 serde_rosmsg = "0.2.0"
 simple-log = "2.1.1"
 simple_logger = "5.0.0"

@@ -4,6 +4,7 @@ use roslibrust_util::geometry_msgs::TransformStamped;
 use std::collections::BTreeMap;
 
 use crate::{
+    get_sorted_indices,
     tf_error::TfError,
     tf_util::{duration_to_f64, duration_to_stamp, stamp_to_duration},
     transforms::{interpolate, to_transform_stamped},
@@ -263,7 +264,7 @@ impl TfIndividualTransformChain {
 
         let keys: Vec<_> = self.transform_chain.keys().cloned().collect();
         let mut gaps: Vec<TimeDelta> = Vec::with_capacity(num - 1);
-        let mut gaps_sorted = BTreeMap::<TimeDelta, usize>::new();
+        // tried storing gaps in a btreemap but there are duplicate keys, so that doesn't work
 
         for i in 0..(num - 1) {
             let key0 = keys[i];
@@ -271,10 +272,9 @@ impl TfIndividualTransformChain {
             let gap = key1 - key0;
 
             gaps.push(gap);
-            // the keys will be sorted lowest to highest, so the longest gap at the end
-            gaps_sorted.insert(gap, i);
         }
-        Some((keys, gaps, gaps_sorted))
+        let sort_indices = get_sorted_indices(&gaps);
+        Some((keys, gaps, sort_indices))
     }
 
     /// debug print the chain, could make this the proper Debug output
@@ -335,11 +335,13 @@ mod test {
             count += 1;
         }
 
-        let (times, gaps, gaps_sorted) = chain.get_gaps().unwrap();
+        let (times, gaps, sorted_indices) = chain.get_gaps().unwrap();
         assert_eq!(times.len(), count);
         assert_eq!(gaps.len(), count - 1);
         println!("{times:?}");
         println!("{gaps:?}");
-        println!("{gaps_sorted:?}");
+        for index in sorted_indices {
+            println!("{index} {:.3}", duration_to_f64(gaps[index]));
+        }
     }
 }

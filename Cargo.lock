@@ -1100,7 +1100,7 @@ dependencies = [
 [[package]]
 name = "mcap_tools"
 version = "0.3.3"
-source = "git+https://github.com/lucasw/mcap_tools?branch=main#bc0005b4cf508a2ea3f94a9a137d33b5ee6470ae"
+source = "git+https://github.com/lucasw/mcap_tools?branch=main#098fc8e2bef3633aed4973ea5696bfddef42e2a2"
 dependencies = [
  "anyhow",
  "camino",
@@ -1748,7 +1748,7 @@ dependencies = [
 [[package]]
 name = "roslibrust_util"
 version = "0.1.0"
-source = "git+https://github.com/lucasw/tf_roslibrust#c5148a9a3689a35a223ecbf9692882e57d9d68a2"
+source = "git+https://github.com/lucasw/tf_roslibrust#12a57d792d7b51333e02f6e513e2c540dbc41ab8"
 dependencies = [
  "anyhow",
  "camino",
@@ -2230,6 +2230,7 @@ dependencies = [
  "log",
  "mcap 0.11.0",
  "mcap_tools",
+ "nalgebra 0.30.1",
  "roslibrust_util 0.1.0",
  "serde_rosmsg",
  "simple-log",

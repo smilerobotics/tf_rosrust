@@ -1,7 +1,7 @@
 #[derive(Clone, Debug, Hash, Eq, PartialEq)]
 pub struct TfGraphNode {
-    pub(crate) child: String,
-    pub(crate) parent: String,
+    pub child: String,
+    pub parent: String,
 }
 
 #[cfg(test)]
