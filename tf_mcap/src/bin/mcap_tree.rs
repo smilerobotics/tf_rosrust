@@ -3,7 +3,6 @@
 ///
 /// show a text version of the ros tf tree as received on /tf and /tf_static
 use clap::{arg, command};
-use mcap_tools::misc;
 use roslibrust_util::tf2_msgs;
 use tf_roslibrust::tf_util;
 use tf_roslibrust::TfBuffer;
@@ -15,7 +14,7 @@ fn get_tfm_from_message(message: &mcap::Message) -> Option<tf2_msgs::TFMessage> 
         Some(schema) => {
             if schema.name == "tf2_msgs/TFMessage" {
                 // println!("{}", schema.name);
-                let msg_with_header = misc::get_message_data_with_header(message.data.clone());
+                let msg_with_header = roslibrust_util::get_message_data_with_header(message.data.clone());
                 match serde_rosmsg::from_slice::<tf2_msgs::TFMessage>(&msg_with_header) {
                     Ok(tfm) => {
                         return Some(tfm);
@@ -69,7 +68,7 @@ fn main() -> Result<(), anyhow::Error> {
 
         // TODO(lucasw) copied from mcap_tools which got it from the mcap rust docs, not
         // sure why it is needed.
-        let mapped_mcap = misc::map_mcap(mcap_name)?;
+        let mapped_mcap = roslibrust_util::map_mcap(mcap_name)?;
 
         let summary = mcap::read::Summary::read(&mapped_mcap)?;
         // let summary = summary.ok_or(Err(anyhow::anyhow!("no summary")))?;
@@ -107,7 +106,7 @@ fn main() -> Result<(), anyhow::Error> {
     for mcap_name in mcap_names {
         log::info!("getting /tf and /tf_static from {mcap_name}");
 
-        let mapped_mcap = misc::map_mcap(&mcap_name)?;
+        let mapped_mcap = roslibrust_util::map_mcap(&mcap_name)?;
 
         let mut count = 0;
         for message in (mcap::MessageStream::new(&mapped_mcap)?).flatten() {

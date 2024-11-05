@@ -1099,8 +1099,8 @@ dependencies = [
 
 [[package]]
 name = "mcap_tools"
-version = "0.3.2"
-source = "git+https://github.com/lucasw/mcap_tools?branch=main#cd89994ebf62e443823f83dc7fcddea2c9990896"
+version = "0.3.3"
+source = "git+https://github.com/lucasw/mcap_tools?branch=main#0fae8a2ccc47130f3e996cc9f5b02bbf2fc054db"
 dependencies = [
  "anyhow",
  "camino",
@@ -1117,7 +1117,7 @@ dependencies = [
  "regex",
  "roslibrust",
  "roslibrust_codegen",
- "roslibrust_codegen_macro",
+ "roslibrust_util 0.1.0 (git+https://github.com/lucasw/tf_roslibrust)",
  "serde",
  "serde_derive",
  "serde_rosmsg",
@@ -1746,6 +1746,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "roslibrust_util"
+version = "0.1.0"
+source = "git+https://github.com/lucasw/tf_roslibrust#70d20fd6e86618c0ec7e1900b750d2a6fcdbeb3b"
+dependencies = [
+ "anyhow",
+ "camino",
+ "log",
+ "memmap",
+ "roslibrust",
+ "roslibrust_codegen",
+ "roslibrust_codegen_macro",
+ "serde",
+ "serde-big-array",
+ "serde_derive",
+ "thiserror",
+ "tokio",
+ "toml",
+ "tracing",
+]
+
+[[package]]
 name = "rustc-demangle"
 version = "0.1.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2209,7 +2230,7 @@ dependencies = [
  "log",
  "mcap 0.11.0",
  "mcap_tools",
- "roslibrust_util",
+ "roslibrust_util 0.1.0",
  "serde_rosmsg",
  "simple-log",
  "simple_logger",
@@ -2227,7 +2248,7 @@ dependencies = [
  "nalgebra 0.30.1",
  "roslibrust",
  "roslibrust_codegen",
- "roslibrust_util",
+ "roslibrust_util 0.1.0",
  "serde",
  "serde-big-array",
  "serde_derive",
