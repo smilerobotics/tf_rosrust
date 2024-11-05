@@ -20,7 +20,11 @@
 //! */
 //!```
 
+use chrono::TimeDelta;
 use roslibrust_util::geometry_msgs;
+use std::collections::BTreeMap;
+
+type GapData = (Vec<TimeDelta>, Vec<TimeDelta>, BTreeMap<TimeDelta, usize>);
 
 pub trait LookupTransform {
     fn lookup_transform(

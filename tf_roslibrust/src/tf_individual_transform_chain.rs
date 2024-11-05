@@ -7,6 +7,7 @@ use crate::{
     tf_error::TfError,
     tf_util::{duration_to_f64, duration_to_stamp, stamp_to_duration},
     transforms::{interpolate, to_transform_stamped},
+    GapData,
 };
 
 #[derive(Clone, Debug)]
@@ -253,6 +254,29 @@ impl TfIndividualTransformChain {
         None
     }
 
+    // return time deltas between transform stamps
+    pub fn get_gaps(&self) -> Option<GapData> {
+        let num = self.transform_chain.len();
+        if num < 2 {
+            return None;
+        }
+
+        let keys: Vec<_> = self.transform_chain.keys().cloned().collect();
+        let mut gaps: Vec<TimeDelta> = Vec::with_capacity(num - 1);
+        let mut gaps_sorted = BTreeMap::<TimeDelta, usize>::new();
+
+        for i in 0..(num - 1) {
+            let key0 = keys[i];
+            let key1 = keys[i + 1];
+            let gap = key1 - key0;
+
+            gaps.push(gap);
+            // the keys will be sorted lowest to highest, so the longest gap at the end
+            gaps_sorted.insert(gap, i);
+        }
+        Some((keys, gaps, gaps_sorted))
+    }
+
     /// debug print the chain, could make this the proper Debug output
     pub fn print(&self) {
         let rv0 = self.transform_chain.first_key_value();
@@ -276,5 +300,46 @@ impl TfIndividualTransformChain {
             }
         }
         println!("{postfix} error in either of {rv0:?} {rv1:?}");
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    use crate::tf_util::f64_to_stamp;
+
+    #[test]
+    fn test_get_gaps() {
+        let mut chain = TfIndividualTransformChain::new(
+            "parent".to_string(),
+            "child".to_string(),
+            false,
+            TimeDelta::new(1000, 0).unwrap(),
+        );
+
+        let mut tfs = TransformStamped::default();
+
+        let mut count = 0;
+        let mut t = 0.0;
+        for i in 0..5 {
+            t = (i * i) as f64;
+            tfs.header.stamp = f64_to_stamp(t);
+            chain.add_to_buffer(tfs.clone());
+            count += 1;
+        }
+        for _i in 0..5 {
+            t += 1.0;
+            tfs.header.stamp = f64_to_stamp(t);
+            chain.add_to_buffer(tfs.clone());
+            count += 1;
+        }
+
+        let (times, gaps, gaps_sorted) = chain.get_gaps().unwrap();
+        assert_eq!(times.len(), count);
+        assert_eq!(gaps.len(), count - 1);
+        println!("{times:?}");
+        println!("{gaps:?}");
+        println!("{gaps_sorted:?}");
     }
 }

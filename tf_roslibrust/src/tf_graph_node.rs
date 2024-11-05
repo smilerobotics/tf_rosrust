@@ -1,5 +1,5 @@
 #[derive(Clone, Debug, Hash, Eq, PartialEq)]
-pub(crate) struct TfGraphNode {
+pub struct TfGraphNode {
     pub(crate) child: String,
     pub(crate) parent: String,
 }

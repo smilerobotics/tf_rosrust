@@ -14,7 +14,8 @@ fn get_tfm_from_message(message: &mcap::Message) -> Option<tf2_msgs::TFMessage> 
         Some(schema) => {
             if schema.name == "tf2_msgs/TFMessage" {
                 // println!("{}", schema.name);
-                let msg_with_header = roslibrust_util::get_message_data_with_header(message.data.clone());
+                let msg_with_header =
+                    roslibrust_util::get_message_data_with_header(message.data.clone());
                 match serde_rosmsg::from_slice::<tf2_msgs::TFMessage>(&msg_with_header) {
                     Ok(tfm) => {
                         return Some(tfm);

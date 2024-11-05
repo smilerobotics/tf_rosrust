@@ -1100,7 +1100,7 @@ dependencies = [
 [[package]]
 name = "mcap_tools"
 version = "0.3.3"
-source = "git+https://github.com/lucasw/mcap_tools?branch=main#0fae8a2ccc47130f3e996cc9f5b02bbf2fc054db"
+source = "git+https://github.com/lucasw/mcap_tools?branch=main#bc0005b4cf508a2ea3f94a9a137d33b5ee6470ae"
 dependencies = [
  "anyhow",
  "camino",
@@ -1748,7 +1748,7 @@ dependencies = [
 [[package]]
 name = "roslibrust_util"
 version = "0.1.0"
-source = "git+https://github.com/lucasw/tf_roslibrust#70d20fd6e86618c0ec7e1900b750d2a6fcdbeb3b"
+source = "git+https://github.com/lucasw/tf_roslibrust#c5148a9a3689a35a223ecbf9692882e57d9d68a2"
 dependencies = [
  "anyhow",
  "camino",

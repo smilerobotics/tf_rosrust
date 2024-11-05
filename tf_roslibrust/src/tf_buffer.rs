@@ -10,6 +10,7 @@ use crate::{
     tf_individual_transform_chain::TfIndividualTransformChain,
     tf_util::{stamp_to_duration, to_stamp},
     transforms::{chain_transforms, get_inverse, to_transform_stamped},
+    GapData,
 };
 
 #[derive(Clone, Debug)]
@@ -296,6 +297,14 @@ impl TfBuffer {
         // TODO(lucasw) return an error if the frame doesn't exist as a child
         // println!("child frame {child_frame} not in tf buffer");
         None
+    }
+
+    pub fn get_gaps(&self) -> HashMap<TfGraphNode, Option<GapData>> {
+        let mut gap_datas = HashMap::<TfGraphNode, Option<GapData>>::new();
+        for (graph_node, chain) in self.transform_data.iter() {
+            gap_datas.insert(graph_node.clone(), chain.get_gaps());
+        }
+        gap_datas
     }
 
     // debug the tf chains
