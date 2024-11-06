@@ -105,7 +105,7 @@ fn main() -> Result<(), anyhow::Error> {
     let mut tf_buffer =
         TfBuffer::new_with_duration(chrono::TimeDelta::new(elapsed as i64, 0).unwrap());
 
-    let tf_topics = vec!["/tf".to_string(), "/tf_static".to_string()];
+    let tf_topics = ["/tf".to_string(), "/tf_static".to_string()];
 
     for mcap_name in mcap_names {
         log::info!("getting /tf and /tf_static from {mcap_name}");
@@ -131,7 +131,7 @@ fn main() -> Result<(), anyhow::Error> {
         log::info!("{count} tfms loaded");
     }
 
-    fn get_gap_bins(gaps: &Vec<TimeDelta>, sorted_indices: &Vec<usize>) -> (Vec<f64>, f64, f64) {
+    fn get_gap_bins(gaps: &[TimeDelta], sorted_indices: &Vec<usize>) -> (Vec<f64>, f64, f64) {
         let num = gaps.len();
         let mut gap_dvec = nalgebra::DVector::zeros(num);
         let mut gap_vec = Vec::with_capacity(num);

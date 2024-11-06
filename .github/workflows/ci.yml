@@ -44,6 +44,8 @@ jobs:
           sudo apt-get install -yqq cargo
           sudo apt-get install -yqq rustc
           sudo apt-get install -yqq librust-openssl-dev
+          # currently these are 1.82 (but are 1.75 on non-github-action Ubuntu 22.04)
+          # mostly this makes clippy fail on more things
           cargo --version
           rustc --version
 
