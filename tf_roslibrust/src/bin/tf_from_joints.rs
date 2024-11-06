@@ -21,6 +21,7 @@ async fn main() -> Result<(), anyhow::Error> {
         params.insert("_name".to_string(), "tf_fron_joints".to_string());
         let mut remaps = HashMap::<String, String>::new();
         remaps.insert("joint_states".into(), "joint_states".into());
+        remaps.insert("tf".into(), "/tf".into());
         let (_ns, full_node_name, unused_args) = get_params_remaps(&mut params, &mut remaps);
         (full_node_name, unused_args, remaps)
     };
@@ -53,10 +54,11 @@ async fn main() -> Result<(), anyhow::Error> {
             .subscribe::<sensor_msgs::JointState>(js_topic, 200)
             .await?;
 
+        let tf_topic = remaps.get("tf").unwrap();
         // TODO(lucasw) optionally tf_static, and set to latching
         let latching = false;
         let tf_publisher = nh
-            .advertise::<tf2_msgs::TFMessage>("/tf", 20, latching)
+            .advertise::<tf2_msgs::TFMessage>(tf_topic, 20, latching)
             .await
             .unwrap();
 
@@ -90,8 +92,9 @@ async fn main() -> Result<(), anyhow::Error> {
             }
         }
     }
+    // TODO(lucasw) the publisher isn't reliably getting unregistered
     // wait for publisher tasks to finish
-    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+    tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
 
     Ok(())
 }
