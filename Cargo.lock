@@ -1650,7 +1650,7 @@ dependencies = [
 [[package]]
 name = "roslibrust"
 version = "0.11.1"
-source = "git+https://github.com/lucasw/roslibrust?branch=get_rx_msg_def#1e5cd19bcce935fff12a1afe1c24ae4f623d797f"
+source = "git+https://github.com/lucasw/roslibrust?branch=get_rx_msg_def#eff8214a3d7c87eabf95bade64fd72388ff1e000"
 dependencies = [
  "abort-on-drop",
  "anyhow",
@@ -1683,7 +1683,7 @@ dependencies = [
 [[package]]
 name = "roslibrust_codegen"
 version = "0.11.1"
-source = "git+https://github.com/lucasw/roslibrust?branch=get_rx_msg_def#1e5cd19bcce935fff12a1afe1c24ae4f623d797f"
+source = "git+https://github.com/lucasw/roslibrust?branch=get_rx_msg_def#eff8214a3d7c87eabf95bade64fd72388ff1e000"
 dependencies = [
  "lazy_static",
  "log",
@@ -1705,7 +1705,7 @@ dependencies = [
 [[package]]
 name = "roslibrust_codegen_macro"
 version = "0.11.1"
-source = "git+https://github.com/lucasw/roslibrust?branch=get_rx_msg_def#1e5cd19bcce935fff12a1afe1c24ae4f623d797f"
+source = "git+https://github.com/lucasw/roslibrust?branch=get_rx_msg_def#eff8214a3d7c87eabf95bade64fd72388ff1e000"
 dependencies = [
  "proc-macro2",
  "quote",
