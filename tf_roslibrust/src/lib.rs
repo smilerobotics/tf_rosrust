@@ -26,7 +26,7 @@ use roslibrust_util::geometry_msgs;
 type GapData = (Vec<TimeDelta>, Vec<TimeDelta>, Vec<usize>);
 
 // TODO(lucasw) remove mcap_tools version of this, have it use this one
-pub fn get_sorted_indices<T: PartialOrd>(list: &Vec<T>) -> Vec<usize> {
+pub fn get_sorted_indices<T: PartialOrd>(list: &[T]) -> Vec<usize> {
     let mut indices = (0..list.len()).collect::<Vec<_>>();
     indices.sort_by(|&a, &b| list[a].partial_cmp(&list[b]).unwrap());
     indices
