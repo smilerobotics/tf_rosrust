@@ -9,6 +9,7 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
+clap.workspace = true
 futures = "0.3.31"
 serde.workspace = true
 serde-big-array.workspace = true

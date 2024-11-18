@@ -1,7 +1,8 @@
+// use clap::{arg, command};
 use roslibrust_util::ReadTomlFileError;
 // use serde::de::Error;
 use serde_derive::{Deserialize, Serialize};
-// use std::collections::HashMap;
+use std::collections::HashMap;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 use tokio::signal;
@@ -52,8 +53,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli_args: Vec<String> = std::env::args().collect();
     let input_toml_name = &cli_args[1];
     let launch = get_cmds_from_toml(input_toml_name)?;
-    let args = launch.arg;
     let cmds = launch.cmd;
+    let mut launch_args = HashMap::new();
+    for arg in launch.arg {
+        launch_args.insert(arg.name, arg.default);
+    }
+
+    // override the toml default values with command line provided ones
+    for cli_arg in &cli_args[2..] {
+        let key_val: Vec<&str> = cli_arg.split(":=").collect();
+        if key_val.len() != 2 {
+            // args2.push(arg);
+            continue;
+        }
+        let key = key_val[0];
+        let value = key_val[1];
+        if !launch_args.contains_key(key) {
+            return Err(format!("unexpected arg {key} (set to {value})").into());
+        }
+        println!("overriding {key} default value with {value}");
+        launch_args.insert(key.to_string(), value.to_string());
+    }
 
     let mut handles = Vec::new();
     for cmd in cmds {
@@ -61,8 +81,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut command = Command::new(cmd.command);
         for arg in cmd.args {
             let mut arg = arg.clone();
-            for launch_arg in &args {
-                arg = arg.replace(&format!("$(arg {})", launch_arg.name), &launch_arg.default);
+            for (launch_arg_name, launch_arg_value) in &launch_args {
+                arg = arg.replace(&format!("$(arg {})", launch_arg_name), launch_arg_value);
             }
             print!(" {arg}");
             command.arg(arg);

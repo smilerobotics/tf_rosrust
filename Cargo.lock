@@ -947,6 +947,7 @@ dependencies = [
 name = "launcher"
 version = "0.1.0"
 dependencies = [
+ "clap",
  "futures",
  "roslibrust_util 0.1.0",
  "serde",
