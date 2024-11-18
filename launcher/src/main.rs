@@ -1,5 +1,6 @@
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
+use tokio::signal;
 
 use std::process::Stdio;
 
@@ -24,8 +25,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let _ = run(cmd1).await;
     });
 
+    match signal::ctrl_c().await {
+        Ok(()) => {
+            println!("got ctrl-c, exiting");
+        }
+        Err(err) => {
+            eprintln!("Unable to listen for shutdown signal: {}", err);
+            // we also shut down in case of error
+        }
+    }
+
     let rv = tokio::join!(handle0, handle1);
-    println!("{rv:?}");
+    println!("exited: {rv:?}");
 
     Ok(())
 }
@@ -58,6 +69,7 @@ async fn run(mut cmd: Command) -> Result<(), Box<dyn std::error::Error>> {
         println!("child status was: {}", status);
     });
 
+    // TODO(lucasw) could use an mpsc channel to send this back to main
     while let Some(line) = reader.next_line().await? {
         println!("Line: {}", line);
     }
