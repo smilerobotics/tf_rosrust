@@ -1,9 +1,17 @@
+[[arg]]
+name = "topic"
+default = "/test"
+
+[[arg]]
+name = "value"
+default = "test1"
+
 [[cmd]]
 name = "rostopic pub string"
 command = "rostopic"
-args = ["pub", "/test", "std_msgs/String", "\"data: 'test0'\"", "-r", "1"]
+args = ["pub", "$(arg topic)", "std_msgs/String", "\"data: '$(arg value)'\"", "-r", "1"]
 
 [[cmd]]
 name = "rostopic echo string"
 command = "rostopic"
-args = ["echo", "/test"]
+args = ["echo", "$(arg topic)"]
