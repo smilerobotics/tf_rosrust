@@ -9,4 +9,12 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
+futures = "0.3.31"
+serde.workspace = true
+serde-big-array.workspace = true
+serde_derive.workspace = true
 tokio.workspace = true
+toml.workspace = true
+
+[dependencies.roslibrust_util]
+path = "../roslibrust_util"

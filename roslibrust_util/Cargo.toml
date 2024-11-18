@@ -15,9 +15,9 @@ anyhow.workspace = true
 camino = "1.1.9"
 log.workspace = true
 memmap = "0.7.0"
-serde = { version = "1.0", features = ["derive"] }
-serde-big-array = "0.5.1"
-serde_derive = "1.0.210"
+serde.workspace = true
+serde-big-array.workspace = true
+serde_derive.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 toml.workspace = true

@@ -1,0 +1,9 @@
+[[cmd]]
+name = "rostopic pub string"
+command = "rostopic"
+args = ["--help"]
+
+[[cmd]]
+name = "rostopic echo string"
+command = "rostopic"
+args = ["echo"]

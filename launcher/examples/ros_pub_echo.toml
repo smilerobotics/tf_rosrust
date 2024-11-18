@@ -1,0 +1,9 @@
+[[cmd]]
+name = "rostopic pub string"
+command = "rostopic"
+args = ["pub", "/test", "std_msgs/String", "\"data: 'test0'\"", "-r", "1"]
+
+[[cmd]]
+name = "rostopic echo string"
+command = "rostopic"
+args = ["echo", "/test"]
