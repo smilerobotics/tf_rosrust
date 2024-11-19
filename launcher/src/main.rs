@@ -3,6 +3,7 @@ use roslibrust_util::ReadTomlFileError;
 // use serde::de::Error;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::process::ExitStatus;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 use tokio::signal;
@@ -48,7 +49,7 @@ pub fn get_cmds_from_toml(input_toml_name: &String) -> Result<Launch, ReadTomlFi
 fn make_launch_handles(
     cmds: Vec<Cmd>,
     launch_args: HashMap<String, String>,
-) -> Vec<tokio::task::JoinHandle<()>> {
+) -> Vec<tokio::task::JoinHandle<ExitStatus>> {
     let mut handles = Vec::new();
     for cmd in cmds {
         print!("[{}] {}", cmd.name, cmd.command);
@@ -64,7 +65,17 @@ fn make_launch_handles(
         println!();
 
         let handle = tokio::spawn(async move {
-            let _ = run(command, cmd.name).await;
+            let rv = run(command, cmd.name).await;
+            match rv {
+                Ok(es) => es,
+                Err(err) => {
+                    eprintln!("{err:?}");
+                    // TODO(lucasw) not sure about this but it compiles
+                    // need to map errors to unix exit codes as much as possible but for now any
+                    // non-zero works
+                    std::os::unix::prelude::ExitStatusExt::from_raw(1)
+                }
+            }
         });
         handles.push(handle);
     }
@@ -113,13 +124,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     use futures::future::TryJoinAll;
-    let rv = handles.into_iter().collect::<TryJoinAll<_>>().await;
-    println!("all handles finished, exiting {rv:?}");
+    let codes = handles.into_iter().collect::<TryJoinAll<_>>().await?;
+    for code in &codes {
+        // return if any non-zero
+        if !code.success() {
+            return Err(format!("{codes:?}").into());
+        }
+    }
+    println!("all handles finished without error, exiting");
 
     Ok(())
 }
 
-async fn run(mut command: Command, cmd_name: String) -> Result<(), Box<dyn std::error::Error>> {
+async fn run(
+    mut command: Command,
+    cmd_name: String,
+) -> Result<ExitStatus, Box<dyn std::error::Error>> {
     // Specify that we want the command's standard output piped back to us.
     // By default, standard input/output/error will be inherited from the
     // current process (for example, this means that standard input will
@@ -146,12 +166,17 @@ async fn run(mut command: Command, cmd_name: String) -> Result<(), Box<dyn std::
 
     loop {
         tokio::select! {
-            result = child.wait() => {
-                println!("[{}] child exited {result:?}", cmd_name);
+            exit_status = child.wait() => {
+                println!("[{}] child exited {exit_status:?}", cmd_name);
                 // TODO(lucasw) return error if non-zero
-                // match result {
-                // }
-                break // child process exited
+                match exit_status {
+                    Ok(exit_status) => {
+                        return Ok(exit_status);
+                    }
+                    Err(err) => {
+                        return Err(err.into());
+                    }
+                }
             }
             result = stdout_reader.next_line() => {
                 match result {
@@ -176,6 +201,6 @@ async fn run(mut command: Command, cmd_name: String) -> Result<(), Box<dyn std::
         }
     }
 
-    println!("[{}] done", cmd_name);
-    Ok(())
+    // println!("[{}] done", cmd_name);
+    // Ok(ExitStatus::default())
 }
