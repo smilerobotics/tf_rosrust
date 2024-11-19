@@ -1,4 +1,4 @@
-// use clap::{arg, command};
+use clap::command;
 use roslibrust_util::ReadTomlFileError;
 // use serde::de::Error;
 use serde_derive::{Deserialize, Serialize};
@@ -28,10 +28,7 @@ pub struct Launch {
     pub cmd: Vec<Cmd>,
 }
 
-pub fn get_cmds_from_toml(
-    input_toml_name: &String,
-    // ) -> Result<HashMap<String, Cmd>, ReadTomlFileError> {
-) -> Result<Launch, ReadTomlFileError> {
+pub fn get_cmds_from_toml(input_toml_name: &String) -> Result<Launch, ReadTomlFileError> {
     println!("opening '{input_toml_name}'");
     let contents = match std::fs::read_to_string(input_toml_name) {
         Ok(contents) => contents,
@@ -48,33 +45,10 @@ pub fn get_cmds_from_toml(
     Ok(data)
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let cli_args: Vec<String> = std::env::args().collect();
-    let input_toml_name = &cli_args[1];
-    let launch = get_cmds_from_toml(input_toml_name)?;
-    let cmds = launch.cmd;
-    let mut launch_args = HashMap::new();
-    for arg in launch.arg {
-        launch_args.insert(arg.name, arg.default);
-    }
-
-    // override the toml default values with command line provided ones
-    for cli_arg in &cli_args[2..] {
-        let key_val: Vec<&str> = cli_arg.split(":=").collect();
-        if key_val.len() != 2 {
-            // args2.push(arg);
-            continue;
-        }
-        let key = key_val[0];
-        let value = key_val[1];
-        if !launch_args.contains_key(key) {
-            return Err(format!("unexpected arg {key} (set to {value})").into());
-        }
-        println!("overriding {key} default value with {value}");
-        launch_args.insert(key.to_string(), value.to_string());
-    }
-
+fn make_launch_handles(
+    cmds: Vec<Cmd>,
+    launch_args: HashMap<String, String>,
+) -> Vec<tokio::task::JoinHandle<()>> {
     let mut handles = Vec::new();
     for cmd in cmds {
         print!("[{}] {}", cmd.name, cmd.command);
@@ -94,18 +68,53 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
         handles.push(handle);
     }
+    handles
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let cli_args: Vec<String> = std::env::args().collect();
+    let input_toml_name = &cli_args[1];
+    let launch = get_cmds_from_toml(input_toml_name)?;
+    let cmds = launch.cmd;
+    let mut launch_args = HashMap::new();
+    for arg in launch.arg {
+        launch_args.insert(arg.name, arg.default);
+    }
+
+    let mut remaining_args = Vec::new();
+    // override the toml default values with command line provided ones
+    for cli_arg in &cli_args[2..] {
+        let key_val: Vec<&str> = cli_arg.split(":=").collect();
+        if key_val.len() != 2 {
+            remaining_args.push(cli_arg);
+            continue;
+        }
+        let key = key_val[0];
+        let value = key_val[1];
+        if !launch_args.contains_key(key) {
+            return Err(format!("unexpected arg {key} (set to {value})").into());
+        }
+        println!("overriding {key} default value with {value}");
+        launch_args.insert(key.to_string(), value.to_string());
+    }
+
+    // use clap just for the --version currently
+    let _matches = command!().get_matches_from(remaining_args);
+
+    let handles = make_launch_handles(cmds, launch_args);
+
+    tokio::spawn(async move {
+        signal::ctrl_c().await.unwrap();
+        println!("got ctrl-c, waiting for handles to end before exiting");
+        tokio::time::sleep(tokio::time::Duration::from_secs(4)).await;
+        eprintln!("failed to join handles after timeout");
+        std::process::exit(1);
+    });
 
     use futures::future::TryJoinAll;
-    tokio::select! {
-        _ = signal::ctrl_c() => {
-            println!("got ctrl-c, exiting");
-            // break;
-        }
-        rv = handles.into_iter().collect::<TryJoinAll<_>>() => {
-            println!("all handles finished, exiting {rv:?}");
-            // break;
-        }
-    }
+    let rv = handles.into_iter().collect::<TryJoinAll<_>>().await;
+    println!("all handles finished, exiting {rv:?}");
 
     Ok(())
 }
