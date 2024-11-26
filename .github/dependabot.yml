@@ -1,0 +1,19 @@
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: daily
+    commit-message:
+      prefix: ''
+    ignore:
+      # These dependencies need to be updated at the same time with openrr/openrr.
+      - dependency-name: nalgebra
+    labels: []
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: daily
+    commit-message:
+      prefix: ''
+    labels: []
