@@ -84,7 +84,7 @@ async fn main() -> Result<(), anyhow::Error> {
                         tf.header.stamp = stamp.clone();
                     }
 
-                    let rv = tf_publisher.publish(&tfm).await;
+                    let rv = tf_publisher.publish(&tfm);
                     if rv.is_err() {
                         log::error!("{rv:?}");
                         // TODO(lucasw) also want to return not-ok

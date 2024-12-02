@@ -1114,7 +1114,7 @@ dependencies = [
 [[package]]
 name = "mcap_tools"
 version = "0.3.3"
-source = "git+https://github.com/lucasw/mcap_tools?branch=main#098fc8e2bef3633aed4973ea5696bfddef42e2a2"
+source = "git+https://github.com/lucasw/mcap_tools?branch=main#cb55cee041beae96398a923dfcc99e53cfe27418"
 dependencies = [
  "anyhow",
  "camino",
@@ -1664,7 +1664,7 @@ dependencies = [
 [[package]]
 name = "roslibrust"
 version = "0.11.1"
-source = "git+https://github.com/lucasw/roslibrust?branch=get_rx_msg_def#eff8214a3d7c87eabf95bade64fd72388ff1e000"
+source = "git+https://github.com/lucasw/roslibrust?branch=get_rx_msg_def#1725e817feb73a5fc1b64171aa0da1b6628d3487"
 dependencies = [
  "abort-on-drop",
  "anyhow",
@@ -1697,7 +1697,7 @@ dependencies = [
 [[package]]
 name = "roslibrust_codegen"
 version = "0.11.1"
-source = "git+https://github.com/lucasw/roslibrust?branch=get_rx_msg_def#eff8214a3d7c87eabf95bade64fd72388ff1e000"
+source = "git+https://github.com/lucasw/roslibrust?branch=get_rx_msg_def#1725e817feb73a5fc1b64171aa0da1b6628d3487"
 dependencies = [
  "lazy_static",
  "log",
@@ -1719,7 +1719,7 @@ dependencies = [
 [[package]]
 name = "roslibrust_codegen_macro"
 version = "0.11.1"
-source = "git+https://github.com/lucasw/roslibrust?branch=get_rx_msg_def#eff8214a3d7c87eabf95bade64fd72388ff1e000"
+source = "git+https://github.com/lucasw/roslibrust?branch=get_rx_msg_def#1725e817feb73a5fc1b64171aa0da1b6628d3487"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1762,7 +1762,7 @@ dependencies = [
 [[package]]
 name = "roslibrust_util"
 version = "0.1.0"
-source = "git+https://github.com/lucasw/tf_roslibrust#12a57d792d7b51333e02f6e513e2c540dbc41ab8"
+source = "git+https://github.com/lucasw/tf_roslibrust#38bb19e4ac50cb5621a411f4ef8b67a0a61e209c"
 dependencies = [
  "anyhow",
  "camino",

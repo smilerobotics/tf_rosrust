@@ -55,7 +55,6 @@ impl TfBroadcaster {
         // TODO: handle error correctly
         self.publisher
             .publish(&tf_message)
-            .await
             // .map_err(|err| TfError::Rosrust(err.description().to_string()))
             .map_err(|_err| TfError::Rosrust("TODO failed publish".to_string()))
     }

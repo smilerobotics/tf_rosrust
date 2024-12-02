@@ -381,8 +381,8 @@ impl crate::LookupTransform for TfBuffer {
                     match min_time {
                         Some(min_time) => {
                             let stamp = to_stamp(
-                                min_time.num_seconds() as u32,
-                                min_time.subsec_nanos() as u32,
+                                min_time.num_seconds() as i32,
+                                min_time.subsec_nanos(),
                             );
                             // println!("most recent stamp {stamp:?} {min_time:?}");
                             Some(stamp)
@@ -456,13 +456,13 @@ mod test {
     /// * base_link of a robot starting at (0,0,0) and progressing at (0,t,0) where t is time in seconds
     /// * a camera which is (0.5, 0, 0) from the base_link
     fn build_test_tree(buffer: &mut TfBuffer, time: f64) {
-        let nsecs = ((time - ((time.floor() as i64) as f64)) * 1E9) as u32;
+        let nsecs = ((time - ((time.floor() as i64) as f64)) * 1E9) as i32;
 
         let world_to_item = TransformStamped {
             child_frame_id: "item".to_string(),
             header: Header {
                 frame_id: "world".to_string(),
-                stamp: to_stamp(time.floor() as u32, nsecs),
+                stamp: to_stamp(time.floor() as i32, nsecs),
                 seq: 1,
             },
             transform: Transform {
@@ -487,7 +487,7 @@ mod test {
             header: Header {
                 frame_id: "world".to_string(),
                 stamp: Time {
-                    secs: time.floor() as u32,
+                    secs: time.floor() as i32,
                     nsecs: nsecs,
                 },
                 seq: 1,
@@ -514,7 +514,7 @@ mod test {
             header: Header {
                 frame_id: "base_link".to_string(),
                 stamp: Time {
-                    secs: time.floor() as u32,
+                    secs: time.floor() as i32,
                     nsecs: nsecs,
                 },
                 seq: 1,

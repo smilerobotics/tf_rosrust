@@ -9,7 +9,7 @@ use crate::transforms::isometry_to_transform;
 use crate::TfBuffer;
 use crate::{tf_error::TfError, LookupTransform};
 
-pub fn to_stamp(secs: u32, nsecs: u32) -> Time {
+pub fn to_stamp(secs: i32, nsecs: i32) -> Time {
     roslibrust_codegen::Time { secs, nsecs }
 }
 
@@ -22,12 +22,12 @@ pub fn duration_now() -> TimeDelta {
 }
 
 pub fn duration_to_stamp(time: TimeDelta) -> Time {
-    to_stamp(time.num_seconds() as u32, time.subsec_nanos() as u32)
+    to_stamp(time.num_seconds() as i32, time.subsec_nanos())
 }
 
 pub fn f64_to_stamp(seconds: f64) -> roslibrust_codegen::Time {
-    let secs = seconds as u32;
-    let nsecs = ((seconds - secs as f64) * 1e9) as u32;
+    let secs = seconds as i32;
+    let nsecs = ((seconds - secs as f64) * 1e9) as i32;
     to_stamp(secs, nsecs)
 }
 
@@ -40,10 +40,11 @@ pub fn stamp_to_duration(stamp: &Time) -> TimeDelta {
     let mut secs = stamp.secs;
     // if nsecs > 1e9 the timedelta will fail
     let mut nsecs = stamp.nsecs;
-    let nsecs_per_sec = 1e9 as u32;
+    let nsecs_per_sec = 1e9 as i32;
     secs += nsecs / nsecs_per_sec;
     nsecs %= nsecs_per_sec;
-    TimeDelta::new(secs.into(), nsecs).unwrap_or_else(|| panic!("secs: {secs} nsecs: {nsecs}"))
+    TimeDelta::new(secs.into(), nsecs as u32)
+        .unwrap_or_else(|| panic!("secs: {secs} nsecs: {nsecs}"))
 }
 
 pub fn duration_to_f64(time: TimeDelta) -> f64 {
