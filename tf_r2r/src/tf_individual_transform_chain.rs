@@ -69,7 +69,7 @@ impl TfIndividualTransformChain {
         }
 
         match binary_search_time(&self.transform_chain, time) {
-            Ok(x) => return Ok(self.transform_chain.get(x).unwrap().clone()),
+            Ok(x) => Ok(self.transform_chain.get(x).unwrap().clone()),
             Err(x) => {
                 if x == 0 {
                     return Err(TfError::AttemptedLookupInPast(
