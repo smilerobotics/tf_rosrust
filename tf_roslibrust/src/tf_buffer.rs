@@ -380,10 +380,8 @@ impl crate::LookupTransform for TfBuffer {
                     // TODO(lucasw) will a static transform return a bad stamp?
                     match min_time {
                         Some(min_time) => {
-                            let stamp = to_stamp(
-                                min_time.num_seconds() as i32,
-                                min_time.subsec_nanos(),
-                            );
+                            let stamp =
+                                to_stamp(min_time.num_seconds() as i32, min_time.subsec_nanos());
                             // println!("most recent stamp {stamp:?} {min_time:?}");
                             Some(stamp)
                         }
