@@ -1,9 +1,11 @@
 use anyhow::{Context, Result};
 use camino::Utf8Path;
 use memmap::Mmap;
-use roslibrust::ros1::{determine_addr, MasterClient, NodeServerHandle, XmlRpcServer};
+use roslibrust::ros1::{self, determine_addr, MasterClient, NodeServerHandle, XmlRpcServer};
+use roslibrust_codegen::RosMessageType;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc;
 
 roslibrust_codegen_macro::find_and_generate_ros_messages!();
@@ -165,4 +167,74 @@ pub fn get_expected_rates_from_toml(
         rates.insert(rate.topic.clone(), rate);
     }
     Ok(rates)
+}
+
+// TODO(lucasw) this wouldn't be needed if Subscriber had try_recv
+fn sub_to_arc_mutex<T: RosMessageType>(
+    name: &str,
+    mut sub: ros1::Subscriber<T>,
+    value: Arc<Mutex<Option<T>>>,
+) -> tokio::task::JoinHandle<()> {
+    let name = name.to_string();
+    tokio::spawn(async move {
+        loop {
+            tokio::select! {
+                _ = tokio::signal::ctrl_c() => {
+                    log::warn!("[{name}] subscriber ctrl-c, shutting down subscriber-to-local-channel");
+                    break;
+                }
+                // This next will wait forever if nothing is received so need the select to break out and
+                // exit- but maybe dropping the node handle can be made to unregister subscriber
+                rv = sub.next() => {
+                    match rv {
+                        Some(rv) => {
+                            match rv {
+                                // TODO(lucasw) this will block if the receiver isn't getting
+                                // drained, which will caused the above sub.next() to fail?
+                                Ok(msg) => match value.lock() {
+                                    Ok(mut value) => {
+                                        *value = Some(msg);
+                                    }
+                                    Err(err) => {
+                                        log::warn!("[{name}] sub ok but can't lock value {err:?}");
+                                        break;
+                                    }
+                                },
+                                /*
+                                Err(ros1::Subscriber::SubscriberError::Lagged(n)) => {
+                                    log::warn!("{:?} sub lagged {n}", T::ROS_TYPE_NAME);
+                                    continue;
+                                }
+                                */
+                                Err(err) => {
+                                    log::warn!("[{name}] subscriber {err:?}");
+                                    break;
+                                }
+                            }
+                        }
+                        None => {
+                            log::warn!("[{name}] No messages, subscriber is done {}", T::ROS_TYPE_NAME);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    })
+}
+
+pub struct LatestFromSubscriber<T: RosMessageType> {
+    _handle: tokio::task::JoinHandle<()>,
+    pub latest: Arc<Mutex<Option<T>>>,
+}
+
+impl<T: RosMessageType> LatestFromSubscriber<T> {
+    pub fn new(name: &str, sub: ros1::Subscriber<T>) -> Self {
+        let latest = Arc::new(Mutex::new(None));
+        let handle = sub_to_arc_mutex::<T>(name, sub, latest.clone());
+        Self {
+            _handle: handle,
+            latest,
+        }
+    }
 }
