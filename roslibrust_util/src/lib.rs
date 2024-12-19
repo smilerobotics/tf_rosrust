@@ -223,6 +223,7 @@ fn sub_to_arc_mutex<T: RosMessageType>(
     })
 }
 
+// #[derive(Clone)] can't clone the handle, the caller just needs to clone the arc mutex
 pub struct LatestFromSubscriber<T: RosMessageType> {
     _handle: tokio::task::JoinHandle<()>,
     pub latest: Arc<Mutex<Option<T>>>,
@@ -236,5 +237,36 @@ impl<T: RosMessageType> LatestFromSubscriber<T> {
             _handle: handle,
             latest,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // TODO(lucasw) ignoring for now, need CI to run a roscore
+    #[ignore]
+    #[tokio::test]
+    async fn latest_from_sub() -> Result<(), anyhow::Error> {
+        // roscore needs to be running
+        let mut params = HashMap::<String, String>::new();
+        params.insert("_name".to_string(), "odom_latest".to_string());
+        let mut remaps = HashMap::<String, String>::new();
+        remaps.insert("odom".into(), "odom".into());
+        let (_ns, full_node_name, _remaining_args) = get_params_remaps(&mut params, &mut remaps);
+
+        let master_uri =
+            std::env::var("ROS_MASTER_URI").unwrap_or("http://localhost:11311".to_string());
+
+        let odom_topic = remaps.get("odom").context("no odom remap")?;
+
+        let nh = ros1::NodeHandle::new(&master_uri, &full_node_name).await?;
+
+        let odom_sub = nh.subscribe::<nav_msgs::Odometry>(odom_topic, 20).await?;
+
+        let latest_odom = LatestFromSubscriber::new("odom", odom_sub);
+        let _latest_odom_arc_mutex = latest_odom.latest.clone();
+
+        Ok(())
     }
 }
