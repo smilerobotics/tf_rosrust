@@ -1,5 +1,9 @@
 [package]
 name = "tf_r2r"
+# When publishing a new version:
+# - Create "tf_r2r-v0.x.y" git tag
+# - Run `cargo publish`
+# - Push the above tag (run `git push origin --tags`)
 version = "0.2.0"
 edition.workspace = true
 license.workspace = true
