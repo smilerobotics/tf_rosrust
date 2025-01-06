@@ -30,3 +30,6 @@ single_use_lifetimes = "warn"
 unreachable_pub = "warn"
 [workspace.lints.clippy]
 lint_groups_priority = { level = "allow", priority = 1 } # https://github.com/rust-lang/rust-clippy/issues/12920
+
+[patch.crates-io]
+xml-rs = { version = "0.3", git = "https://github.com/kornelski/xml-rs.git", tag = "0.3.6" } # https://github.com/adnanademovic/rosrust/issues/210
