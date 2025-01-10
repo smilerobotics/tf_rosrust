@@ -149,12 +149,6 @@ dependencies = [
 
 [[package]]
 name = "base64"
-version = "0.13.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e1b586273c5702936fe7b7d6896644d8be71e6314cfe09d3167c95f712589e8"
-
-[[package]]
-name = "base64"
 version = "0.21.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9d297deb1925b89f2ccc13d7635fa0714f12c87adce1c75356b39ca9b7178567"
@@ -200,15 +194,6 @@ name = "bitflags"
 version = "2.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1be3f42a67d6d345ecd59f675f3f012d6974981560836e938c22b424b85ce1be"
-
-[[package]]
-name = "block-buffer"
-version = "0.10.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3078c7629b62d3f0439517fa394996acacc5cbc91c5a20d8c658e77abd503a71"
-dependencies = [
- "generic-array",
-]
 
 [[package]]
 name = "bumpalo"
@@ -331,15 +316,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
 
 [[package]]
-name = "cpufeatures"
-version = "0.2.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16b80225097f2e5ae4e7179dd2266824648f3e2f49d9134d584b76389d31c4c3"
-dependencies = [
- "libc",
-]
-
-[[package]]
 name = "crc32fast"
 version = "1.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -347,21 +323,6 @@ checksum = "a97769d94ddab943e4510d138150169a2758b5ef3eb191a9ee688de3e23ef7b3"
 dependencies = [
  "cfg-if",
 ]
-
-[[package]]
-name = "crossbeam-queue"
-version = "0.3.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f58bbc28f91df819d0aa2a2c00cd19754769c2fad90579b3592b1c9ba7a3115"
-dependencies = [
- "crossbeam-utils",
-]
-
-[[package]]
-name = "crossbeam-utils"
-version = "0.8.21"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
 
 [[package]]
 name = "crossterm"
@@ -387,16 +348,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "acdd7c62a3665c7f6830a51635d9ac9b23ed385797f70a83bb8bafe9c572ab2b"
 dependencies = [
  "winapi",
-]
-
-[[package]]
-name = "crypto-common"
-version = "0.1.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1bfb12502f3fc46cca1bb51ac28df9d618d813cdc3d2f25b9fe775a34af26bb3"
-dependencies = [
- "generic-array",
- "typenum",
 ]
 
 [[package]]
@@ -434,29 +385,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dashmap"
-version = "5.5.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "978747c1d849a7d2ee5e8adc0159961c48fb7e5db2f06af6723b80123bb53856"
-dependencies = [
- "cfg-if",
- "hashbrown 0.14.5",
- "lock_api",
- "once_cell",
- "parking_lot_core",
-]
-
-[[package]]
-name = "deadqueue"
-version = "0.2.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16a2561fd313df162315935989dceb8c99db4ee1933358270a57a3cfb8c957f3"
-dependencies = [
- "crossbeam-queue",
- "tokio",
-]
-
-[[package]]
 name = "deranged"
 version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -474,16 +402,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "digest"
-version = "0.10.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ed9a281f7bc9b7576e61468ba615a66a5c8cfdff42420a70aa82701a3b1e292"
-dependencies = [
- "block-buffer",
- "crypto-common",
 ]
 
 [[package]]
@@ -741,16 +659,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "generic-array"
-version = "0.14.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "85649ca51fd72272d7821adaf274ad91c288277713d9c18820d8499a7ff69e9a"
-dependencies = [
- "typenum",
- "version_check",
-]
-
-[[package]]
 name = "gethostname"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -795,12 +703,6 @@ dependencies = [
  "tokio-util",
  "tracing",
 ]
-
-[[package]]
-name = "hashbrown"
-version = "0.14.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
 
 [[package]]
 name = "hashbrown"
@@ -1066,7 +968,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62f822373a4fe84d4bb149bf54e584a7f4abec90e072ed49cda0edea5b95471f"
 dependencies = [
  "equivalent",
- "hashbrown 0.15.2",
+ "hashbrown",
 ]
 
 [[package]]
@@ -1302,7 +1204,7 @@ dependencies = [
 [[package]]
 name = "mcap_tools"
 version = "0.3.3"
-source = "git+https://github.com/lucasw/mcap_tools?branch=main#cb55cee041beae96398a923dfcc99e53cfe27418"
+source = "git+https://github.com/lucasw/mcap_tools?branch=main#7cd80ce55d600db7ccba8555901681c31f53c7fc"
 dependencies = [
  "anyhow",
  "camino",
@@ -1317,9 +1219,8 @@ dependencies = [
  "memmap",
  "nalgebra 0.33.2",
  "regex",
- "roslibrust 0.11.1",
- "roslibrust_codegen 0.11.1",
- "roslibrust_util 0.1.0",
+ "roslibrust",
+ "roslibrust_util 0.2.0 (git+https://github.com/lucasw/tf_roslibrust)",
  "serde",
  "serde_derive",
  "serde_rosmsg",
@@ -1856,72 +1757,17 @@ dependencies = [
 
 [[package]]
 name = "roslibrust"
-version = "0.11.1"
-source = "git+https://github.com/lucasw/roslibrust?branch=get_rx_msg_def#1725e817feb73a5fc1b64171aa0da1b6628d3487"
-dependencies = [
- "abort-on-drop",
- "anyhow",
- "byteorder",
- "dashmap",
- "deadqueue",
- "futures",
- "futures-util",
- "gethostname",
- "hyper",
- "lazy_static",
- "log",
- "proc-macro2",
- "rand",
- "regex",
- "reqwest",
- "roslibrust_codegen 0.11.1",
- "roslibrust_codegen_macro 0.11.1",
- "roslibrust_serde_rosmsg 0.3.0",
- "serde",
- "serde_json",
- "serde_xmlrpc",
- "smart-default 0.6.0",
- "thiserror 1.0.69",
- "tokio",
- "tokio-tungstenite",
- "uuid",
-]
-
-[[package]]
-name = "roslibrust"
 version = "0.12.2"
 source = "git+https://github.com/lucasw/roslibrust?branch=get_rx_msg_def_v0_12#6768921adf74cba3bff6f8a30e0e2102518d7407"
 dependencies = [
- "roslibrust_codegen 0.12.0",
- "roslibrust_codegen_macro 0.12.0",
+ "roslibrust_codegen",
+ "roslibrust_codegen_macro",
  "roslibrust_common",
  "roslibrust_ros1",
 ]
 
 [[package]]
 name = "roslibrust_codegen"
-version = "0.11.1"
-source = "git+https://github.com/lucasw/roslibrust?branch=get_rx_msg_def#1725e817feb73a5fc1b64171aa0da1b6628d3487"
-dependencies = [
- "lazy_static",
- "log",
- "md5",
- "proc-macro2",
- "quote",
- "serde",
- "serde-big-array",
- "serde_bytes",
- "serde_json",
- "simple-error",
- "smart-default 0.7.1",
- "syn 1.0.109",
- "tokio",
- "walkdir",
- "xml-rs",
-]
-
-[[package]]
-name = "roslibrust_codegen"
 version = "0.12.0"
 source = "git+https://github.com/lucasw/roslibrust?branch=get_rx_msg_def_v0_12#6768921adf74cba3bff6f8a30e0e2102518d7407"
 dependencies = [
@@ -1936,22 +1782,11 @@ dependencies = [
  "serde_bytes",
  "serde_json",
  "simple-error",
- "smart-default 0.7.1",
+ "smart-default",
  "syn 1.0.109",
  "tokio",
  "walkdir",
  "xml-rs",
-]
-
-[[package]]
-name = "roslibrust_codegen_macro"
-version = "0.11.1"
-source = "git+https://github.com/lucasw/roslibrust?branch=get_rx_msg_def#1725e817feb73a5fc1b64171aa0da1b6628d3487"
-dependencies = [
- "proc-macro2",
- "quote",
- "roslibrust_codegen 0.11.1",
- "syn 1.0.109",
 ]
 
 [[package]]
@@ -1961,7 +1796,7 @@ source = "git+https://github.com/lucasw/roslibrust?branch=get_rx_msg_def_v0_12#6
 dependencies = [
  "proc-macro2",
  "quote",
- "roslibrust_codegen 0.12.0",
+ "roslibrust_codegen",
  "syn 1.0.109",
 ]
 
@@ -1992,24 +1827,12 @@ dependencies = [
  "regex",
  "reqwest",
  "roslibrust_common",
- "roslibrust_serde_rosmsg 0.5.0",
+ "roslibrust_serde_rosmsg",
  "serde",
  "serde_xmlrpc",
  "test-log",
  "thiserror 2.0.11",
  "tokio",
-]
-
-[[package]]
-name = "roslibrust_serde_rosmsg"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee7ea0fc21625dd94a69e126b9f2c1eab4b60dd80a6abf3e0a3e284f9d648586"
-dependencies = [
- "byteorder",
- "error-chain 0.12.4",
- "serde",
- "serde_derive",
 ]
 
 [[package]]
@@ -2025,16 +1848,13 @@ dependencies = [
 
 [[package]]
 name = "roslibrust_util"
-version = "0.1.0"
-source = "git+https://github.com/lucasw/tf_roslibrust#4f83a40935cd638d4daa48c0a7a5d8edc0ebad84"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "camino",
  "log",
  "memmap",
- "roslibrust 0.11.1",
- "roslibrust_codegen 0.11.1",
- "roslibrust_codegen_macro 0.11.1",
+ "roslibrust",
  "serde",
  "serde-big-array",
  "serde_derive",
@@ -2048,12 +1868,13 @@ dependencies = [
 [[package]]
 name = "roslibrust_util"
 version = "0.2.0"
+source = "git+https://github.com/lucasw/tf_roslibrust#9a4a0a87a346bafd59271a516a4317feb64b2aa6"
 dependencies = [
  "anyhow",
  "camino",
  "log",
  "memmap",
- "roslibrust 0.12.2",
+ "roslibrust",
  "serde",
  "serde-big-array",
  "serde_derive",
@@ -2294,17 +2115,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sha-1"
-version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5058ada175748e33390e40e872bd0fe59a19f265d0158daa551c5a88a76009c"
-dependencies = [
- "cfg-if",
- "cpufeatures",
- "digest",
-]
-
-[[package]]
 name = "sharded-slab"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2420,17 +2230,6 @@ name = "smallvec"
 version = "1.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
-
-[[package]]
-name = "smart-default"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "133659a15339456eeeb07572eb02a91c91e9815e9cbc89566944d2c8d3efdbf6"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
-]
 
 [[package]]
 name = "smart-default"
@@ -2672,13 +2471,13 @@ dependencies = [
  "clap",
  "log",
  "nalgebra 0.30.1",
- "roslibrust 0.12.2",
+ "roslibrust",
  "roslibrust_util 0.2.0",
  "serde",
  "serde-big-array",
  "serde_derive",
  "simple_logger",
- "smart-default 0.7.1",
+ "smart-default",
  "thiserror 1.0.69",
  "tokio",
  "toml",
@@ -2827,18 +2626,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tokio-tungstenite"
-version = "0.17.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f714dd15bead90401d77e04243611caec13726c2408afd5b31901dfcdcb3b181"
-dependencies = [
- "futures-util",
- "log",
- "tokio",
- "tungstenite",
-]
-
-[[package]]
 name = "tokio-util"
 version = "0.7.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2959,25 +2746,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
 
 [[package]]
-name = "tungstenite"
-version = "0.17.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e27992fd6a8c29ee7eef28fc78349aa244134e10ad447ce3b9f0ac0ed0fa4ce0"
-dependencies = [
- "base64 0.13.1",
- "byteorder",
- "bytes",
- "http",
- "httparse",
- "log",
- "rand",
- "sha-1",
- "thiserror 1.0.69",
- "url",
- "utf-8",
-]
-
-[[package]]
 name = "twox-hash"
 version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3023,12 +2791,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "utf-8"
-version = "0.7.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09cc8ee72d2a9becf2f2febe0205bbed8fc6615b7cb429ad062dc7b7ddd036a9"
-
-[[package]]
 name = "utf16_iter"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3045,15 +2807,6 @@ name = "utf8parse"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
-
-[[package]]
-name = "uuid"
-version = "1.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b913a3b5fe84142e269d63cc62b64319ccaf89b748fc31fe025177f767a756c4"
-dependencies = [
- "getrandom",
-]
 
 [[package]]
 name = "valuable"
