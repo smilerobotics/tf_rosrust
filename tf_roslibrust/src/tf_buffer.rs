@@ -1,7 +1,7 @@
 use std::collections::{hash_map::Entry, HashMap, HashSet};
 
 use chrono::TimeDelta;
-use roslibrust_codegen::Time;
+use roslibrust::codegen::integral_types::Time;
 use roslibrust_util::{geometry_msgs, std_msgs::Header, tf2_msgs};
 
 use crate::{

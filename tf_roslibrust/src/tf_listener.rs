@@ -1,8 +1,8 @@
 use crate::{tf_buffer::TfBuffer, tf_error::TfError};
 use roslibrust_util::{geometry_msgs, tf2_msgs};
 
+use roslibrust::codegen::integral_types::Time;
 use roslibrust::ros1::NodeHandle;
-use roslibrust_codegen::Time;
 use std::sync::{mpsc, Arc, RwLock};
 
 ///This struct tries to be the same as the C++ version of `TransformListener`. Use this struct to lookup transforms.

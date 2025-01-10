@@ -1,5 +1,5 @@
 use chrono::TimeDelta;
-use roslibrust_codegen::Time;
+use roslibrust::codegen::integral_types::Time;
 use roslibrust_util::{geometry_msgs, sensor_msgs, std_msgs, tf2_msgs};
 use serde_derive::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -10,7 +10,7 @@ use crate::TfBuffer;
 use crate::{tf_error::TfError, LookupTransform};
 
 pub fn to_stamp(secs: i32, nsecs: i32) -> Time {
-    roslibrust_codegen::Time { secs, nsecs }
+    Time { secs, nsecs }
 }
 
 pub fn duration_now() -> TimeDelta {
@@ -25,13 +25,13 @@ pub fn duration_to_stamp(time: TimeDelta) -> Time {
     to_stamp(time.num_seconds() as i32, time.subsec_nanos())
 }
 
-pub fn f64_to_stamp(seconds: f64) -> roslibrust_codegen::Time {
+pub fn f64_to_stamp(seconds: f64) -> Time {
     let secs = seconds as i32;
     let nsecs = ((seconds - secs as f64) * 1e9) as i32;
     to_stamp(secs, nsecs)
 }
 
-pub fn stamp_now() -> roslibrust_codegen::Time {
+pub fn stamp_now() -> Time {
     duration_to_stamp(duration_now())
 }
 

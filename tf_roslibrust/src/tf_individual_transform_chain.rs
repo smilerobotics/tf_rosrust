@@ -1,5 +1,5 @@
 use chrono::TimeDelta;
-use roslibrust_codegen::Time;
+use roslibrust::codegen::integral_types::Time;
 use roslibrust_util::geometry_msgs::TransformStamped;
 use std::collections::BTreeMap;
 

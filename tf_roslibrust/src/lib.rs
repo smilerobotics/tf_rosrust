@@ -21,6 +21,7 @@
 //!```
 
 use chrono::TimeDelta;
+use roslibrust::codegen::integral_types::Time as RosTime;
 use roslibrust_util::geometry_msgs;
 
 type GapData = (Vec<TimeDelta>, Vec<TimeDelta>, Vec<usize>);
@@ -37,15 +38,15 @@ pub trait LookupTransform {
         &self,
         from: &str,
         to: &str,
-        stamp0: Option<roslibrust_codegen::Time>,
+        stamp0: Option<RosTime>,
     ) -> Result<geometry_msgs::TransformStamped, tf_error::TfError>;
 
     fn lookup_transform_with_time_travel(
         &self,
         to: &str,
-        time2: roslibrust_codegen::Time,
+        time2: RosTime,
         from: &str,
-        time1: roslibrust_codegen::Time,
+        time1: RosTime,
         fixed_frame: &str,
     ) -> Result<geometry_msgs::TransformStamped, tf_error::TfError>;
 }

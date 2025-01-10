@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use roslibrust_codegen::Time;
+use roslibrust::codegen::integral_types::Time;
 use thiserror::Error;
 
 /// Enumerates the different types of errors

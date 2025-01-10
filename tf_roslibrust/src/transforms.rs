@@ -1,6 +1,6 @@
 pub use nalgebra;
 use nalgebra::geometry::{Isometry3, Translation3, UnitQuaternion};
-use roslibrust_codegen::Time;
+use roslibrust::codegen::integral_types::Time;
 use roslibrust_util::{geometry_msgs, std_msgs};
 
 use geometry_msgs::{Pose, Quaternion, Transform, TransformStamped, Vector3};

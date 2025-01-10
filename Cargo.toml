@@ -31,11 +31,11 @@ toml = "0.8.19"
 
 [workspace.dependencies.roslibrust]
 git = "https://github.com/lucasw/roslibrust"
-branch = "get_rx_msg_def"
+branch = "get_rx_msg_def_v0_12"
 # path = "../../roslibrust/roslibrust"
-# version="0.10.2"
-features = ["ros1"]
+version="0.12.2"
+features = ["macro", "ros1"]
 
-[workspace.dependencies.roslibrust_codegen]
-git = "https://github.com/lucasw/roslibrust"
-branch = "get_rx_msg_def"
+# [workspace.dependencies.roslibrust_codegen]
+# git = "https://github.com/lucasw/roslibrust"
+# branch = "get_rx_msg_def_v0_12"

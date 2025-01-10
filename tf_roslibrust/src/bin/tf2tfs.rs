@@ -113,7 +113,7 @@ async fn main() -> Result<(), anyhow::Error> {
             }
 
             if !new_tfm.transforms.is_empty() {
-                tf_publisher.publish(&new_tfm)?;
+                tf_publisher.publish(&new_tfm).await?;
                 if no_new_count > 400 {
                     log::warn!(
                         "new tfs {} after {no_new_count} updates",

@@ -80,7 +80,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 Some(Ok(js)) => {
                     let tfm = tf_util::joint_states_to_tfm(&js, &joints_config);
                     if let Ok(tfm) = tfm {
-                        tf_publisher.publish(&tfm)?;
+                        tf_publisher.publish(&tfm).await?;
                     }
                 }
                 Some(Err(err)) => {

@@ -2,13 +2,13 @@ use anyhow::{Context, Result};
 use camino::Utf8Path;
 use memmap::Mmap;
 use roslibrust::ros1::{self, determine_addr, MasterClient, NodeServerHandle, XmlRpcServer};
-use roslibrust_codegen::RosMessageType;
+use roslibrust::RosMessageType;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc;
 
-roslibrust_codegen_macro::find_and_generate_ros_messages!();
+roslibrust::find_and_generate_ros_messages!();
 
 pub async fn get_master_client(node_name: &str) -> Result<MasterClient, anyhow::Error> {
     // copied this out of roslibrust actor.rs Node::new(), seemed like bare minimum
