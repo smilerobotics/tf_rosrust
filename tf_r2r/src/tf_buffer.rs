@@ -99,7 +99,7 @@ impl TfBuffer {
                             child: v.clone(),
                             parent: current_node.clone(),
                         })
-                        .map_or(false, |chain| chain.has_valid_transform(time))
+                        .is_some_and(|chain| chain.has_valid_transform(time))
                     {
                         parents.insert(v.to_string(), current_node.clone());
                         frontier.push_front(v.to_string());
