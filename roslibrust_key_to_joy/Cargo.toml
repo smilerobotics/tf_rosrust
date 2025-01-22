@@ -1,0 +1,19 @@
+[package]
+name = "roslibrust_key_to_joy"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+crossterm = "0.28.1"
+anyhow.workspace = true
+clap.workspace = true
+roslibrust.workspace = true
+tokio.workspace = true
+
+[dependencies.roslibrust_util]
+path = "../roslibrust_util"

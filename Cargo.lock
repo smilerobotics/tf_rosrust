@@ -1813,6 +1813,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "roslibrust_key_to_joy"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "crossterm",
+ "roslibrust",
+ "roslibrust_util 0.2.0",
+ "tokio",
+]
+
+[[package]]
 name = "roslibrust_ros1"
 version = "0.12.1"
 source = "git+https://github.com/lucasw/roslibrust?branch=get_rx_msg_def_v0_12#6768921adf74cba3bff6f8a30e0e2102518d7407"

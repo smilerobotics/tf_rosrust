@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = [ "launcher", "roslibrust_util", "tf_mcap",
+members = [ "launcher", "roslibrust_key_to_joy", "roslibrust_util", "tf_mcap",
     "tf_roslibrust",
 ]
 
