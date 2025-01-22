@@ -7,7 +7,7 @@ use clap::command;
 use crossterm::cursor;
 use crossterm::event::{read, Event, KeyCode, KeyEvent, KeyModifiers};
 use crossterm::style::Print;
-use crossterm::terminal::{disable_raw_mode, Clear, ClearType};
+use crossterm::terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType};
 use roslibrust::ros1::NodeHandle;
 use roslibrust_util::sensor_msgs;
 use std::collections::HashMap;
@@ -41,6 +41,7 @@ async fn main() -> Result<(), anyhow::Error> {
         .advertise::<sensor_msgs::Joy>(joy_topic, 8, false)
         .await?;
 
+    enable_raw_mode().unwrap();
     let mut stdout = stdout();
     // going into raw mode
     // clearing the screen, going to top left corner and printing welcoming message
@@ -55,7 +56,7 @@ async fn main() -> Result<(), anyhow::Error> {
     5 is the right trigger
     */
     let mut joy = sensor_msgs::Joy {
-        axes: vec![0.0; 5],
+        axes: vec![0.0; 6],
         ..Default::default()
     };
 
@@ -71,12 +72,15 @@ async fn main() -> Result<(), anyhow::Error> {
                 //clearing the screen and printing our message
                 ..
             }) => execute!(stdout, Clear(ClearType::All), Print("Hello world!")).unwrap(),
+
+            // TODO(lucasw) lots of repeated code here
             Event::Key(KeyEvent {
                 code: KeyCode::Char('a'),
                 ..
             }) => {
-                joy.axes[0] -= 0.1;
-                joy.axes[0] = joy.axes[0].clamp(-1.0, 1.0);
+                let axes = &mut joy.axes[0];
+                *axes -= 0.1;
+                *axes = axes.clamp(-1.0, 1.0);
                 execute!(
                     stdout,
                     Clear(ClearType::All),
@@ -88,8 +92,9 @@ async fn main() -> Result<(), anyhow::Error> {
                 code: KeyCode::Char('d'),
                 ..
             }) => {
-                joy.axes[0] += 0.1;
-                joy.axes[0] = joy.axes[0].clamp(-1.0, 1.0);
+                let axes = &mut joy.axes[0];
+                *axes += 0.1;
+                *axes = axes.clamp(-1.0, 1.0);
                 execute!(
                     stdout,
                     Clear(ClearType::All),
@@ -97,6 +102,58 @@ async fn main() -> Result<(), anyhow::Error> {
                 )
                 .unwrap();
             }
+
+            Event::Key(KeyEvent {
+                code: KeyCode::Char('s'),
+                ..
+            }) => {
+                let axes = &mut joy.axes[1];
+                *axes -= 0.1;
+                *axes = axes.clamp(-1.0, 1.0);
+            }
+            Event::Key(KeyEvent {
+                code: KeyCode::Char('w'),
+                ..
+            }) => {
+                let axes = &mut joy.axes[1];
+                *axes += 0.1;
+                *axes = axes.clamp(-1.0, 1.0);
+            }
+
+            Event::Key(KeyEvent {
+                code: KeyCode::Char('2'),
+                ..
+            }) => {
+                let axes = &mut joy.axes[2];
+                *axes += 0.1;
+                *axes = axes.clamp(-1.0, 1.0);
+            }
+            Event::Key(KeyEvent {
+                code: KeyCode::Char('1'),
+                ..
+            }) => {
+                let axes = &mut joy.axes[2];
+                *axes -= 0.1;
+                *axes = axes.clamp(-1.0, 1.0);
+            }
+
+            Event::Key(KeyEvent {
+                code: KeyCode::Char('9'),
+                ..
+            }) => {
+                let axes = &mut joy.axes[5];
+                *axes -= 0.1;
+                *axes = axes.clamp(-1.0, 1.0);
+            }
+            Event::Key(KeyEvent {
+                code: KeyCode::Char('0'),
+                ..
+            }) => {
+                let axes = &mut joy.axes[5];
+                *axes += 0.1;
+                *axes = axes.clamp(-1.0, 1.0);
+            }
+
             Event::Key(KeyEvent {
                 code: KeyCode::Char('c'),
                 modifiers: KeyModifiers::CONTROL,
